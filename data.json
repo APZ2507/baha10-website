@@ -1,6 +1,9 @@
 {
   "services": {
     "clinic": {
+      "name": "מרפאה",
+      "category": "health",
+      "icon": "⚕",
       "hours": {
         "0": [
           {
@@ -42,9 +45,14 @@
       },
       "note": "יש לקבוע תור דרך <a href=\"https://meditik.medical.idf.il/home\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #0000ee; text-decoration: underline;\">MEDITIK</a>. למקרי חירום מחוץ לשעות הפעילות — פנו למרפאה.",
       "videoUrl": "Meditik.mp4",
-      "videoCaption": "הדרכה: איך מזמינים תור במדיטיק"
+      "videoCaption": "הדרכה: איך מזמינים תור במדיטיק",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     },
     "dental": {
+      "name": "מרפאת שיניים",
+      "category": "health",
+      "icon": "🦷",
       "hours": {
         "0": [
           {
@@ -79,9 +87,16 @@
         "5": [],
         "6": []
       },
-      "note": ""
+      "note": "",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     },
     "mental-health": {
+      "name": "בריאות הנפש",
+      "category": "health",
+      "icon": "🧠",
       "hours": {
         "0": [
           {
@@ -106,9 +121,16 @@
         "5": [],
         "6": []
       },
-      "note": "קבלה אצל קצין הפסיכולוגיה - בתיאום מראש. למקרה דחוף פנו למרפאה או לתורן הבסיס."
+      "note": "קבלה אצל קצין הפסיכולוגיה - בתיאום מראש. למקרה דחוף פנו למרפאה או לתורן הבסיס.",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     },
     "gym": {
+      "name": "חדר כושר",
+      "category": "sport",
+      "icon": "🏋",
       "hours": {
         "0": [
           {
@@ -211,10 +233,15 @@
         ]
       },
       "note": "",
+      "videoUrl": "",
+      "videoCaption": "",
       "waGroupUrl": "https://chat.whatsapp.com/BBECUEVZE2IH4nAgsOTg7z",
       "waGroupLabel": "הצטרפו לקבוצת חדר הכושר והחוגים לעדכונים"
     },
     "mess-hall": {
+      "name": "חדר אוכל",
+      "category": "food",
+      "icon": "🍽",
       "hours": {
         "0": [
           {
@@ -326,9 +353,16 @@
           }
         ]
       },
-      "note": ""
+      "note": "",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     },
     "meat-kitchen": {
+      "name": "בשרייה",
+      "category": "food",
+      "icon": "🥩",
       "hours": {
         "0": [
           {
@@ -388,9 +422,16 @@
         ],
         "6": []
       },
-      "note": ""
+      "note": "",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     },
     "dairy-kitchen": {
+      "name": "חלבייה",
+      "category": "food",
+      "icon": "🧀",
       "hours": {
         "0": [
           {
@@ -455,9 +496,16 @@
           }
         ]
       },
-      "note": ""
+      "note": "",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     },
     "shekem": {
+      "name": "שק\"ם",
+      "category": "food",
+      "icon": "🛒",
       "hours": {
         "0": [
           {
@@ -502,9 +550,16 @@
           }
         ]
       },
-      "note": ""
+      "note": "",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     },
     "pool": {
+      "name": "בריכה",
+      "category": "sport",
+      "icon": "🏊",
       "hours": {
         "0": [
           {
@@ -544,9 +599,16 @@
         ],
         "6": []
       },
-      "note": "התעדכנו מול מפקדים האם הבריכה פתוחה בעונה הנוכחית"
+      "note": "התעדכנו מול מפקדים האם הבריכה פתוחה בעונה הנוכחית",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     },
     "quartermaster": {
+      "name": "אפסנאות",
+      "category": "logistics",
+      "icon": "🧰",
       "hours": {
         "0": [
           {
@@ -606,9 +668,16 @@
         ],
         "6": []
       },
-      "note": ""
+      "note": "",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     },
     "armory": {
+      "name": "נשקייה",
+      "category": "logistics",
+      "icon": "🛡",
       "hours": {
         "0": [
           {
@@ -675,9 +744,14 @@
       },
       "note": "",
       "videoUrl": "WeaponForm.mp4",
-      "videoCaption": "הדרכת מילוי טופס נשק באתר \"בסיס חכם\""
+      "videoCaption": "הדרכת מילוי טופס נשק דיגיטלי באתר \"בסיס חכם\"",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     },
     "synagogue": {
+      "name": "בית כנסת",
+      "category": "prayers",
+      "icon": "🕍",
       "hours": {
         "0": [
           {
@@ -794,7 +868,11 @@
           }
         ]
       },
-      "note": "זמני קבלת שבת והבדלה משתנים לפי זמני כניסת/יציאת השבת בעונה — עדכנו בהתאם."
+      "note": "זמני קבלת שבת והבדלה משתנים לפי זמני כניסת/יציאת השבת בעונה — עדכנו בהתאם.",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "",
+      "waGroupLabel": ""
     }
   },
   "phones": [
@@ -827,6 +905,11 @@
       "name": "מנהלה",
       "role": "שירותי טייסת מנהלה, 24/7",
       "number": "08635-9953"
+    },
+    {
+      "name": "מגדל",
+      "role": "שירותי מסלולים, דיווח על שריפות בזמ\"א, 24/7",
+      "number": "08635-9966"
     },
     {
       "name": "תקשוב",
@@ -939,5 +1022,59 @@
   "shuttleApps": {
     "appStoreUrl": "https://apps.apple.com/il/app/שאט-ל-היסעים-צה-ל/id1504198076",
     "googlePlayUrl": "https://play.google.com/store/apps/details?id=com.shift.idf&pcampaignid=web_share"
-  }
+  },
+  "guidelines": [
+    {
+      "title": "אבטחת מידע",
+      "points": [
+        "אין להכניס טלפונים ניידים או מצלמות לאזורים מוגבלים המסומנים בשילוט.",
+        "כל מסמך המסומן כרגיש יש לאחסן בכספת/ארון נעול בלבד.",
+        "דווחו מיידית על כל אירוע חשוד או אובדן ציוד למחלקת אבטחת מידע."
+      ]
+    },
+    {
+      "title": "בטיחות",
+      "points": [
+        "חובת חגורת בטיחות/ציוד מגן בהתאם לאזור העבודה.",
+        "שמרו על נתיבי מילוט פנויים בכל עת.",
+        "כל תקלה או מפגע בטיחותי יש לדווח מיידית לממונה בטיחות.",
+        "עליכם לציית להוראות של רמזורי ומחסומי הטיסה בכבישים המנהלתיים!, בכל מקרה חצייה של מחסום תתבצע לאחר סריקה של האזור",
+        "כל עבודה על/בקרבת המסלולים מחייבת מעבר תדריך ייעודי/ הסמכת מסלולים ע\"י המגדל"
+      ]
+    },
+    {
+      "title": "ספיגה",
+      "points": [
+        "בעת התרעה יש לפעול לפי נוהל ספיגה המקומי ולהגיע למרחב המוגן הקרוב ביותר.",
+        "יש להכיר מראש את מיקום המרחבים המוגנים באזור המגורים והעבודה שלכם.",
+        "עדכנו סעיף זה בהתאם לנהלים הרשמיים והעדכניים של הבסיס."
+      ]
+    }
+  ],
+  "absorptionSteps": [
+    {
+      "title": "דרכי הגעה",
+      "desc": "הגעה באמצעות שאטלים/ הגעה למרכזית ב\"ש/אילת ומשם קו 392 לעובדה"
+    },
+    {
+      "title": "ביצוע לומדות",
+      "desc": "לומדות: רפואה, ת\"ש, יוהל\"ם, אבטחת מידע, חינוך. בקרו ב<a href=\"https://www.home.idf.il/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #0000ee; text-decoration: underline;\">אתר צה\"ל</a>"
+    },
+    {
+      "title": "שיבוץ ליחידה ולחדר",
+      "desc": "קבלת שיבוץ סופי ליחידה, לצוות ולחדר המגורים."
+    },
+    {
+      "title": "בדיקות רפואיות ראשוניות",
+      "desc": "סבב קצר במרפאה — בדיקת התאמה ופתיחת כרטיס רפואי."
+    },
+    {
+      "title": "ראיון אישי",
+      "desc": "ראיון עם המפקדים ביחידה"
+    },
+    {
+      "title": "פתיחת כרטיס מגנטי והתחלת שגרה",
+      "desc": "קבלת אמצעי כניסה, כרטיס לחדר אוכל ותחילת פעילות שוטפת."
+    }
+  ]
 }
