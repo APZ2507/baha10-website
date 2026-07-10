@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>המצוין מתחיל כאן</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&family=Assistant:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   טוקנים עיצוביים — כאן קובעים צבעים, גופנים ורדיוסים כלליים
+   ========================================================= */
+:root{
+  /* פלטת שקיעה: חול חמים ברקע, דמדומים סגולים לכותרת, כתום-אלמוג ככפתור ראשי, זהב כהדגשה */
+  --bg: #F5E6D8;
+  --bg-2: #EED2B8;
+  --panel: #FFFAF2;
+  --panel-2: #F9EADB;
+  --ink: #2E2130;
+  --ink-soft: #6E5B60;
+  --olive: #D9603D;        /* אלמוג - צבע פעולה ראשי */
+  --olive-dark: #3B2A52;   /* דמדומים סגולים - כותרות */
+  --brass: #E8A33D;        /* זהב - הדגשות */
+  --brass-light: #F3C77C;
+  --open: #4C7A4A;
+  --open-bg: #E7EEDD;
+  --closed: #A23B2E;
+  --closed-bg: #F5E1D9;
+  --steel: #6B4C7A;        /*הסגול-מעושן לפרטי קשר*/
+  --steel-bg: #EAE1F0;
+  --sunset-grad: linear-gradient(180deg, #EE9257 0%, #F5C89A 55%, #FBEFE1 100%); /* אומברה כתום-לבן עדינה - כותרת + קו 10 */
+  --on-sunset-ink: #4A2E1D;  /* טקסט כהה קריא על גבי האומברה הבהירה */
+  --on-sunset-soft: #7C5B44;
+  --radius: 14px;
+  --shadow: 0 2px 0 rgba(46,33,48,0.07), 0 10px 24px -14px rgba(46,33,48,0.4);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(1200px 500px at 15% -10%, #FCEBDB 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  color:var(--ink);
+  font-family:'Assistant', sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+h1,h2,h3,.display{
+  font-family:'Heebo', sans-serif;
+  font-weight:900;
+  letter-spacing:0.5px;
+  color:var(--olive-dark);
+  margin:0;
+}
+
+.mono{font-family:'JetBrains Mono', monospace; letter-spacing:0.5px;}
+
+a{color:inherit; text-decoration:none;}
+
+::selection{background:var(--brass-light); color:var(--olive-dark);}
+
+/* focus visibility */
+a:focus-visible, button:focus-visible, input:focus-visible{
+  outline:3px solid var(--brass);
+  outline-offset:2px;
+}
+
+/* =========================================================
+   באנר שער (תמונת רקע) - לא דביק, גולל עם העמוד
+   ========================================================= */
+.hero-banner{
+  width:100%;
+  height:260px;
+  background: url('header-background.png') center 35% / cover no-repeat;
+  position:relative;
+}
+.hero-banner::after{
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(0,0,0,0) 55%, var(--bg) 100%);
+}
+@media (max-width:640px){
+  .hero-banner{ height:150px; }
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+header.site-head{
+  position:sticky; top:0; z-index:50;
+  background:var(--sunset-grad);
+  color:var(--on-sunset-ink);
+  padding:18px 20px 16px;
+  box-shadow:0 8px 20px -12px rgba(74,46,29,0.3);
+}
+.head-row{
+  max-width:1100px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand .badge{
+  width:46px; height:46px; border-radius:10px;
+  background:var(--olive-dark);
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; color:#FBEFE1; font-weight:900;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,0.25);
+  flex-shrink:0;
+}
+.brand-text h1{color:var(--on-sunset-ink); font-size:22px;}
+.brand-text .sub{font-size:12.5px; color:var(--on-sunset-soft); margin-top:2px; letter-spacing:0.4px;}
+
+.clock{
+  text-align:left; direction:ltr;
+  background:rgba(255,255,255,0.5);
+  border:1px solid rgba(74,46,29,0.15);
+  border-radius:10px;
+  padding:6px 14px;
+  min-width:150px;
+}
+.clock .time{font-size:20px; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--on-sunset-ink);}
+.clock .day{font-size:11.5px; color:var(--on-sunset-soft); text-align:right; direction:rtl; letter-spacing:0.5px;}
+
+/* search */
+.search-wrap{max-width:1100px; margin:14px auto 0; position:relative;}
+.search-box{
+  display:flex; align-items:center; gap:10px;
+  background:#F8F5EA; border-radius:12px;
+  padding:10px 14px;
+  box-shadow: var(--shadow);
+}
+.search-box svg{flex-shrink:0; opacity:0.55;}
+.search-box input{
+  flex:1; border:none; background:transparent; outline:none;
+  font-family:'Assistant',sans-serif; font-size:16px; color:var(--ink);
+  padding:4px 0;
+}
+.search-box input::placeholder{color:#9a9683;}
+.search-results{
+  position:absolute; top:calc(100% + 6px); right:0; left:0;
+  background:var(--panel); border-radius:12px; overflow:hidden;
+  box-shadow:var(--shadow); z-index:60; display:none;
+}
+.search-results.show{display:block;}
+.search-results button{
+  display:flex; align-items:center; gap:10px; width:100%;
+  padding:10px 14px; background:none; border:none; cursor:pointer;
+  font-family:'Assistant',sans-serif; font-size:15px; color:var(--ink);
+  border-bottom:1px solid var(--panel-2); text-align:right;
+}
+.search-results button:hover{background:var(--panel-2);}
+.search-results .empty{padding:12px 14px; color:var(--ink-soft); font-size:14px;}
+
+/* =========================================================
+   ניווט קטגוריות
+   ========================================================= */
+nav.cats{
+  position:sticky; top:96px; z-index:40;
+  background:var(--bg);
+  padding:12px 20px;
+  border-bottom:1px solid rgba(72,87,59,0.15);
+}
+.cats-row{
+  max-width:1100px; margin:0 auto;
+  display:flex; gap:10px; overflow-x:auto; padding-bottom:2px;
+  scrollbar-width:thin;
+}
+.cat-btn{
+  flex-shrink:0;
+  display:flex; align-items:center; gap:8px;
+  padding:9px 18px 9px 14px;
+  background:var(--panel);
+  border:1px solid rgba(72,87,59,0.2);
+  color:var(--olive-dark);
+  font-family:'Heebo',sans-serif; font-weight:700; font-size:14.5px;
+  cursor:pointer;
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+  transition:background .15s, color .15s, transform .1s;
+}
+.cat-btn:hover{transform:translateY(-1px);}
+.cat-btn.active{
+  background:linear-gradient(120deg, var(--olive), var(--brass)); color:#FFF9F1; border-color:var(--olive);
+}
+.cat-btn .n{
+  font-family:'JetBrains Mono',monospace; font-size:11.5px;
+  background:rgba(0,0,0,0.12); padding:1px 7px; border-radius:20px;
+}
+.cat-btn.active .n{background:rgba(255,255,255,0.2);}
+
+/* =========================================================
+   מבנה כללי
+   ========================================================= */
+main{max-width:1100px; margin:0 auto; padding:28px 20px 60px;}
+section.block{margin-bottom:44px;}
+.block-title{
+  display:flex; align-items:center; gap:14px; margin-bottom:18px; flex-wrap:wrap;
+}
+.block-title h2{font-size:21px; color:var(--olive-dark);}
+.block-title h2:empty{display:none;}
+.block-title .eyebrow{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:'Heebo', sans-serif; font-weight:800; font-size:14px;
+  letter-spacing:0.3px; color:#FFFBF3;
+  background:linear-gradient(120deg, var(--olive), var(--brass));
+  padding:7px 18px;
+  border-radius:22px;
+  box-shadow:var(--shadow);
+}
+
+.grid{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr));
+  gap:16px;
+}
+
+/* =========================================================
+   כרטיס שירות
+   ========================================================= */
+.card{
+  background:var(--panel);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:18px 18px 16px;
+  position:relative;
+  border-top:3px solid var(--olive);
+  scroll-margin-top:170px;
+  transition: box-shadow .25s, transform .25s;
+}
+.card.flash{
+  animation:flashHighlight 1.6s ease;
+}
+@keyframes flashHighlight{
+  0%{box-shadow:0 0 0 3px var(--brass-light), var(--shadow);}
+  100%{box-shadow:var(--shadow);}
+}
+.card-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+.card-id{display:flex; align-items:center; gap:10px;}
+.icon-badge{
+  width:42px; height:42px; border-radius:10px;
+  background:var(--panel-2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px;
+  flex-shrink:0;
+}
+.card-id h3{font-size:16.5px; color:var(--ink);}
+.card-id .cat-tag{font-size:11px; color:var(--ink-soft); letter-spacing:0.3px;}
+
+.stamp{
+  font-family:'Heebo',sans-serif; font-weight:900; font-size:11.5px;
+  letter-spacing:1px;
+  padding:5px 10px;
+  border-radius:7px;
+  border:1.5px dashed currentColor;
+  transform:rotate(-3deg);
+  white-space:nowrap;
+}
+.stamp.open{color:var(--open); background:var(--open-bg);}
+.stamp.closed{color:var(--closed); background:var(--closed-bg);}
+
+.card .status-line{
+  margin-top:10px; font-size:13px; color:var(--ink-soft);
+}
+.card .status-line b{color:var(--ink); font-weight:700;}
+
+.hours-table{
+  width:100%; margin-top:14px; border-collapse:collapse; font-size:13px;
+}
+.hours-table tr{border-bottom:1px solid var(--panel-2);}
+.hours-table tr:last-child{border-bottom:none;}
+.hours-table td{padding:5px 2px; vertical-align:top;}
+.hours-table td.day-name{width:58px; color:var(--ink-soft); font-weight:600;}
+.hours-table tr.today td.day-name{color:var(--olive); font-weight:800;}
+.hours-table tr.today{background:var(--panel-2); border-radius:6px;}
+.hours-table .win-list{display:flex; flex-direction:column; gap:2px;}
+.hours-table .win{font-family:'JetBrains Mono',monospace; font-size:12.5px;}
+.hours-table .win .lbl{font-family:'Assistant',sans-serif; color:var(--ink-soft); font-size:11.5px; margin-inline-start:5px;}
+.hours-table .closed-txt{color:var(--closed); font-size:12.5px;}
+
+/* =========================================================
+   כרטיס קו 10
+   ========================================================= */
+.bus-card{
+  background:var(--sunset-grad);
+  color:var(--on-sunset-ink);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px;
+  scroll-margin-top:170px;
+}
+.bus-card .card-top h3{color:var(--on-sunset-ink); font-size:19px;}
+.bus-card .card-id .cat-tag{color:var(--on-sunset-soft);}
+.bus-card .icon-badge{background:rgba(255,255,255,0.6); color:var(--on-sunset-ink);}
+.bus-next{display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;}
+.bus-chip{
+  background:rgba(255,255,255,0.55);
+  border:1px solid rgba(74,46,29,0.15);
+  border-radius:10px;
+  padding:12px 16px;
+  min-width:140px;
+  flex:1;
+}
+.bus-chip .route{font-family:'Heebo',sans-serif; font-weight:800; font-size:13px; color:var(--olive);}
+.bus-chip .time{font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; margin-top:2px; color:var(--on-sunset-ink);}
+.bus-chip .countdown{font-size:12px; color:var(--on-sunset-soft); margin-top:3px;}
+.bus-empty{
+  margin-top:16px; padding:14px 16px; border-radius:10px;
+  background:rgba(255,255,255,0.55); font-size:14px; color:var(--on-sunset-ink);
+}
+.bus-toggle{
+  margin-top:16px; background:none; border:1px solid rgba(74,46,29,0.3);
+  color:var(--on-sunset-ink); padding:8px 16px; border-radius:8px; cursor:pointer;
+  font-family:'Assistant',sans-serif; font-size:13.5px; font-weight:600;
+}
+.bus-toggle:hover{background:rgba(255,255,255,0.35);}
+.bus-full{display:none; margin-top:16px;}
+.bus-full.show{display:block;}
+.bus-route-block{margin-bottom:14px;}
+.bus-route-block h4{font-family:'Heebo',sans-serif; font-size:14px; color:var(--olive); margin-bottom:6px;}
+.bus-route-block .stops{font-size:12.5px; color:var(--on-sunset-soft); line-height:1.7;}
+.bus-route-block .times{
+  display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;
+}
+.bus-route-block .t{
+  font-family:'JetBrains Mono',monospace; font-size:12px;
+  background:rgba(255,255,255,0.55); padding:3px 8px; border-radius:6px; color:var(--on-sunset-ink);
+}
+.bus-note{margin-top:14px; font-size:12px; color:var(--on-sunset-soft); line-height:1.6;}
+
+/* =========================================================
+   תהליך קליטה
+   ========================================================= */
+.timeline{
+  display:flex; flex-direction:column; gap:0;
+  counter-reset:step;
+}
+.tl-step{
+  display:flex; gap:16px; position:relative; padding-bottom:26px;
+}
+.tl-step:last-child{padding-bottom:0;}
+.tl-step:not(:last-child)::before{
+  content:''; position:absolute; right:19px; top:40px; bottom:0;
+  width:2px; background:repeating-linear-gradient(180deg, var(--brass) 0 6px, transparent 6px 12px);
+}
+.tl-num{
+  counter-increment:step;
+  width:40px; height:40px; border-radius:50%;
+  background:var(--olive); color:#F3EEDF;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px;
+  flex-shrink:0; z-index:1;
+}
+.tl-num::before{content: counter(step);}
+.tl-body{
+  background:var(--panel); border-radius:12px; padding:14px 16px;
+  box-shadow:var(--shadow); flex:1;
+}
+.tl-body h4{font-family:'Heebo',sans-serif; font-size:15.5px; color:var(--ink); margin-bottom:4px;}
+.tl-body p{margin:0; font-size:13.5px; color:var(--ink-soft); line-height:1.6;}
+
+/* =========================================================
+   טלפונים חשובים
+   ========================================================= */
+.phones-grid{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr));
+  gap:12px;
+}
+.phone-card{
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--panel); border-radius:12px; padding:14px 16px;
+  box-shadow:var(--shadow);
+  border-inline-start:4px solid var(--steel);
+}
+.phone-card .name{font-weight:700; font-size:14.5px; color:var(--ink);}
+.phone-card .role{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+.phone-card a.dial{
+  display:flex; align-items:center; gap:8px;
+  background:var(--steel-bg); color:var(--steel);
+  padding:8px 14px; border-radius:9px; font-family:'JetBrains Mono',monospace;
+  font-weight:700; font-size:14.5px; direction:ltr;
+}
+.phone-card a.dial:hover{background:var(--steel); color:#fff;}
+
+/* =========================================================
+   סרטוני הדרכה (מוטמעים בכרטיסי שירות ובעלוני מידע)
+   ========================================================= */
+.video-section{margin-top:14px;}
+.video-placeholder{
+  border:1.5px dashed rgba(72,87,59,0.3);
+  border-radius:10px; padding:16px; text-align:center;
+  font-size:13px; color:var(--ink-soft); background:var(--panel-2);
+}
+.video-caption{font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;}
+.video-embed-wrap{position:relative; width:100%; padding-top:56.25%; border-radius:10px; overflow:hidden;}
+.video-embed-wrap iframe{position:absolute; inset:0; width:100%; height:100%; border:0;}
+.info-video{width:100%; border-radius:10px; display:block;}
+
+/* =========================================================
+   קישור חיצוני (לדוגמה הזמנת כרטיס אגד)
+   ========================================================= */
+.external-link{
+  display:inline-flex; align-items:center; gap:6px; margin-top:14px;
+  background:var(--olive); color:#FFF9F1; font-weight:700; font-size:13.5px;
+  padding:9px 18px; border-radius:9px;
+}
+.external-link:hover{background:var(--olive-dark);}
+.app-links-row{display:flex; flex-wrap:wrap; gap:10px;}
+.app-links-row .external-link{margin-top:14px;}
+
+/* =========================================================
+   בועת ווטסאפ - הצטרפות לקבוצה
+   ========================================================= */
+.wa-bubble{
+  display:inline-flex; align-items:center; gap:8px; margin-top:12px;
+  background:#DCF8C6; color:#1F2C17;
+  padding:10px 16px; border-radius:16px 16px 16px 4px;
+  font-size:13.5px; font-weight:600;
+  box-shadow:0 1px 0 rgba(0,0,0,0.08);
+}
+.wa-bubble:hover{background:#CDEFB0;}
+.wa-bubble .wa-icon{font-size:16px;}
+
+/* =========================================================
+   שאטלים
+   ========================================================= */
+.shuttle-list{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+.shuttle-row{
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  background:var(--panel-2); border-radius:10px; padding:12px 14px;
+}
+.shuttle-route{font-weight:700; font-size:14px; color:var(--ink);}
+.shuttle-days{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+.shuttle-row .wa-bubble{margin-top:0;}
+
+/* =========================================================
+   דגשים ונהלים
+   ========================================================= */
+.guidelines-list{display:flex; flex-direction:column; gap:12px;}
+.guideline-block{
+  background:var(--panel); border-radius:12px; padding:6px 18px;
+  box-shadow:var(--shadow); border-inline-start:4px solid var(--olive);
+}
+.guideline-block summary{
+  cursor:pointer; padding:12px 0; font-family:'Heebo',sans-serif; font-weight:800;
+  font-size:15.5px; color:var(--olive-dark); list-style:none;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.guideline-block summary::-webkit-details-marker{display:none;}
+.guideline-block summary::after{content:'˅'; font-size:16px; color:var(--brass);}
+.guideline-block[open] summary::after{content:'˄';}
+.guideline-block ul{margin:0 0 14px; padding-inline-start:20px; display:flex; flex-direction:column; gap:6px;}
+.guideline-block li{font-size:13.5px; color:var(--ink-soft); line-height:1.6;}
+
+/* =========================================================
+   הערת עריכה למפתח (מוסתרת מהמשתמש בפועל - רק הערה למי שעורך קוד)
+   ========================================================= */
+.dev-note{
+  max-width:1100px; margin:0 auto 20px; padding:12px 20px;
+  font-size:12px; color:var(--ink-soft); text-align:center;
+}
+
+footer{
+  text-align:center; padding:24px 20px 40px; font-size:12px; color:var(--ink-soft);
+}
+
+@media (max-width:640px){
+  nav.cats{top:132px;}
+  .clock{min-width:auto;}
+  .card, .bus-card{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- באנר שער עם תמונת הרקע. להחלפת התמונה: החליפו את הקובץ header-bg.png באותה תיקייה בתמונה אחרת עם אותו שם, או שנו את הנתיב ב-CSS (מחלקת .hero-banner). למחיקת הבאנר לגמרי - מחקו את השורה הבאה ואת בלוק ה-CSS התואם (.hero-banner). -->
+<div class="hero-banner"></div>
+
+<header class="site-head">
+  <div class="head-row">
+    <div class="brand">
+      <div class="brand-text">
+        <h1>המצוין מתחיל כאן</h1>
+        <div class="sub">כל השירותים שהבסיס מציע וטלפונים חשובים במקום אחד</div>
+      </div>
+    </div>
+    <div class="clock">
+      <div class="time mono" id="clockTime">--:--</div>
+      <div class="day" id="clockDay">--</div>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <div class="search-box">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="חיפוש שירות… למשל: מרפאה, אוכל, שקם">
+    </div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+</header>
+
+<nav class="cats">
+  <div class="cats-row" id="catsRow"></div>
+</nav>
+
+<main>
+
+  <section class="block" id="servicesBlock">
+    <div class="block-title">
+      <span class="eyebrow" id="blockEyebrow">כל השירותים</span>
+      <h2 id="blockTitle"></h2>
+    </div>
+    <div class="grid" id="servicesGrid"></div>
+  </section>
+
+</main>
+
+
+<footer>נבנה עבור אנשי הבסיס · דווחו על פערים באתר/ הצעות לשיפור</footer>
+
+<script>
+/* =========================================================================================
+   ============================   CONFIG — כאן עורכים את כל התוכן   ========================
+   =========================================================================================
+   ימים: 0=ראשון 1=שני 2=שלישי 3=רביעי 4=חמישי 5=שישי 6=שבת
+   כל שירות מחזיק hours: מפה מיום -> מערך של חלונות זמן {start,end,label?}
+   מערך ריק [] = סגור באותו יום.
+   אפשר להוסיף כמה חלונות ביום אחד (לדוגמה חדר אוכל עם 3 ארוחות, או חדר כושר עם זמן בנים/בנות)
+   ========================================================================================= */
+
+const DAY_NAMES = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const DAY_SHORT = ['א','ב','ג','ד','ה','ו','ש'];
+
+const CATEGORIES = [
+  { id:'health',      name:'בריאות',          icon:'⚕' },
+  { id:'food',        name:'אוכל',            icon:'🍽' },
+  { id:'logistics',   name:'לוגיסטיקה',       icon:'📦' },
+  { id:'sport',       name:'ספורט ופנאי',     icon:'🏊' },
+  { id:'transport',   name:'תחבורה',          icon:'🚌' },
+  { id:'prayers',     name:'תפילות',          icon:'🕍' },
+  { id:'guidelines',  name:'נהלים',           icon:'📋' },
+  { id:'onboarding',  name:'קליטה',           icon:'🧭' },
+];
+
+// עזר קצר ליצירת חלון שעות זהה לכל יום בטווח נתון
+function everyDay(start, end, days = [0,1,2,3,4]) {
+  const map = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
+  days.forEach(d => map[d] = [{ start, end }]);
+  return map;
+}
+
+const SERVICES = [
+  {
+    id: 'clinic',
+    name: 'מרפאה',
+    category: 'health',
+    icon: '⚕',
+    hours: {
+      0:[{start:'08:00',end:'16:00'}], 1:[{start:'08:00',end:'16:00'}],
+      2:[{start:'08:00',end:'16:00'}], 3:[{start:'08:00',end:'16:00'}],
+      4:[{start:'08:00',end:'16:00'}], 5:[{start:'08:00',end:'12:00'}], 6:[]
+    },
+    note: 'יש לקבוע תור דרך <a href="https://meditik.medical.idf.il/home" target="_blank" rel="noopener noreferrer" style="color: #0000ee; text-decoration: underline;">MEDITIK</a>. למקרי חירום מחוץ לשעות הפעילות — פנו למרפאה.',
+    // הוסיפו כאן קישור לסרטון הדרכה שמסביר איך מזמינים תור במדיטיק.
+    // אפשר קישור הטמעה (embed) מיוטיוב, או קובץ mp4 מקומי (לדוגמה 'meditik-guide.mp4') שיושב באותה תיקייה של קובץ ה-HTML.
+    videoUrl: 'Meditik.mp4',
+    videoCaption: 'הדרכה: איך מזמינים תור במדיטיק'
+  },
+  {
+    id: 'dental',
+    name: 'מרפאת שיניים',
+    category: 'health',
+    icon: '🦷',
+    hours: {
+      0:[{start:'08:00',end:'16:00'}], 1:[{start:'08:00',end:'16:00'}],
+      2:[{start:'08:00',end:'16:00'}], 3:[{start:'08:00',end:'16:00'}],
+      4:[{start:'08:00',end:'16:00'}], 5:[], 6:[]
+    },
+  },
+  {
+    id: 'gym',
+    name: 'חדר כושר',
+    category: 'sport',
+    icon: '🏋',
+    // דוגמה לפיצול בנים/בנות: פשוט הוסיפו label לחלון. כדי לחזור לשעות אחידות לכולם -
+    // מחקו את שני החלונות הראשונים והשאירו חלון יחיד בלי label לאורך כל שעות הפתיחה.
+    hours: {
+      0:[{start:'06:00',end:'08:00',label:'בנים'},{start:'08:00',end:'10:00',label:'בנות'},{start:'10:00',end:'22:00',label:'פתוח לכולם'}],
+      1:[{start:'06:00',end:'08:00',label:'בנים'},{start:'08:00',end:'10:00',label:'בנות'},{start:'10:00',end:'22:00',label:'פתוח לכולם'}],
+      2:[{start:'06:00',end:'08:00',label:'בנים'},{start:'08:00',end:'10:00',label:'בנות'},{start:'10:00',end:'22:00',label:'פתוח לכולם'}],
+      3:[{start:'06:00',end:'08:00',label:'בנים'},{start:'08:00',end:'10:00',label:'בנות'},{start:'10:00',end:'22:00',label:'פתוח לכולם'}],
+      4:[{start:'06:00',end:'08:00',label:'בנים'},{start:'08:00',end:'10:00',label:'בנות'},{start:'10:00',end:'22:00',label:'פתוח לכולם'}],
+      5:[{start:'07:00',end:'13:00',label:'פתוח לכולם'}],
+      6:[{start:'09:00',end:'12:00',label:'פתוח לכולם'}]
+    },
+    // קישור לקבוצת הווטסאפ של חדר הכושר לעדכונים - עדכנו לקישור האמיתי
+    waGroupUrl: 'https://chat.whatsapp.com/BBECUEVZE2IH4nAgsOTg7z',
+    waGroupLabel: 'הצטרפו לקבוצת חדר הכושר והחוגים לעדכונים'
+  },
+  {
+    id: 'mess-hall',
+    name: 'חדר אוכל',
+    category: 'food',
+    icon: '🍽',
+    hours: {
+      0:[{start:'06:30',end:'08:30',label:'בוקר'},{start:'12:00',end:'14:00',label:'צהריים'},{start:'18:00',end:'20:00',label:'ערב'}],
+      1:[{start:'06:30',end:'08:30',label:'בוקר'},{start:'12:00',end:'14:00',label:'צהריים'},{start:'18:00',end:'20:00',label:'ערב'}],
+      2:[{start:'06:30',end:'08:30',label:'בוקר'},{start:'12:00',end:'14:00',label:'צהריים'},{start:'18:00',end:'20:00',label:'ערב'}],
+      3:[{start:'06:30',end:'08:30',label:'בוקר'},{start:'12:00',end:'14:00',label:'צהריים'},{start:'18:00',end:'20:00',label:'ערב'}],
+      4:[{start:'06:30',end:'08:30',label:'בוקר'},{start:'12:00',end:'14:00',label:'צהריים'},{start:'18:00',end:'20:00',label:'ערב'}],
+      5:[{start:'07:00',end:'09:00',label:'בוקר'},{start:'12:30',end:'14:00',label:'צהריים חג'}],
+      6:[{start:'08:00',end:'09:30',label:'בוקר'},{start:'12:30',end:'14:00',label:'צהריים'}]
+    }
+  },
+  {
+    id: 'meat-kitchen',
+    name: 'בשרייה',
+    category: 'food',
+    icon: '🥩',
+    hours: {
+      0:[{start:'11:30',end:'14:00'},{start:'17:30',end:'19:30'}],
+      1:[{start:'11:30',end:'14:00'},{start:'17:30',end:'19:30'}],
+      2:[{start:'11:30',end:'14:00'},{start:'17:30',end:'19:30'}],
+      3:[{start:'11:30',end:'14:00'},{start:'17:30',end:'19:30'}],
+      4:[{start:'11:30',end:'14:00'},{start:'17:30',end:'19:30'}],
+      5:[{start:'12:00',end:'14:00'}], 6:[]
+    }
+  },
+  {
+    id: 'dairy-kitchen',
+    name: 'חלבייה',
+    category: 'food',
+    icon: '🧀',
+    hours: {
+      0:[{start:'06:30',end:'08:30'},{start:'16:00',end:'18:00'}],
+      1:[{start:'06:30',end:'08:30'},{start:'16:00',end:'18:00'}],
+      2:[{start:'06:30',end:'08:30'},{start:'16:00',end:'18:00'}],
+      3:[{start:'06:30',end:'08:30'},{start:'16:00',end:'18:00'}],
+      4:[{start:'06:30',end:'08:30'},{start:'16:00',end:'18:00'}],
+      5:[{start:'07:00',end:'09:00'}], 6:[{start:'08:00',end:'09:30'}]
+    }
+  },
+  {
+    id: 'shekem',
+    name: 'שק"ם',
+    category: 'food', 
+    icon: '🛒',
+    hours: {
+      0:[{start:'08:00',end:'20:00'}], 1:[{start:'08:00',end:'20:00'}],
+      2:[{start:'08:00',end:'20:00'}], 3:[{start:'08:00',end:'20:00'}],
+      4:[{start:'08:00',end:'20:00'}], 5:[{start:'08:00',end:'14:00'}],
+      6:[{start:'10:00',end:'14:00'}]
+    }
+  },
+  {
+    id: 'pool',
+    name: 'בריכה',
+    category: 'sport',
+    icon: '🏊',
+    hours: {
+      0:[{start:'16:00',end:'19:00'}], 1:[{start:'16:00',end:'19:00'}],
+      2:[{start:'16:00',end:'19:00'}], 3:[{start:'16:00',end:'19:00'}],
+      4:[{start:'16:00',end:'19:00'}], 5:[{start:'10:00',end:'13:00'}], 6:[]
+    },
+    note: 'התעדכנו מול מפקדים האם הבריכה פתוחה בעונה הנוכחית'
+  },
+  {
+    // דף מידע חדש - עדכנו שעות אמיתיות בהתאם ליחידה
+    id: 'quartermaster',
+    name: 'אפסנאות',
+    category: 'logistics',
+    icon: '🧰',
+    hours: {
+      0:[{start:'09:00',end:'12:30'},{start:'15:00',end:'17:00'}],
+      1:[{start:'09:00',end:'12:30'},{start:'15:00',end:'17:00'}],
+      2:[{start:'09:00',end:'12:30'},{start:'15:00',end:'17:00'}],
+      3:[{start:'09:00',end:'12:30'},{start:'15:00',end:'17:00'}],
+      4:[{start:'09:00',end:'12:30'},{start:'15:00',end:'17:00'}],
+      5:[{start:'09:00',end:'11:00'}], 6:[]
+    }
+  },
+  {
+    // דף מידע חדש - עדכנו שעות אמיתיות בהתאם ליחידה
+    id: 'armory',
+    name: 'נשקייה',
+    category: 'logistics',
+    icon: '🛡',
+    hours: {
+      0:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
+      1:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
+      2:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
+      3:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
+      4:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
+      5:[{start:'07:00',end:'09:00'}], 
+      6:[{start:'18:00',end:'19:00'}]
+    }
+  },
+  {
+    // שעות לדוגמה - עדכנו לפי זמני התפילות בפועל בבית הכנסת של הבסיס
+    id: 'synagogue',
+    name: 'בית כנסת',
+    category: 'prayers',
+    icon: '🕍',
+    hours: {
+      0:[{start:'06:30',end:'07:00',label:'שחרית'},{start:'13:30',end:'14:00',label:'מנחה'},{start:'19:30',end:'20:00',label:'ערבית'}],
+      1:[{start:'06:30',end:'07:00',label:'שחרית'},{start:'13:30',end:'14:00',label:'מנחה'},{start:'19:30',end:'20:00',label:'ערבית'}],
+      2:[{start:'06:30',end:'07:00',label:'שחרית'},{start:'13:30',end:'14:00',label:'מנחה'},{start:'19:30',end:'20:00',label:'ערבית'}],
+      3:[{start:'06:30',end:'07:00',label:'שחרית'},{start:'13:30',end:'14:00',label:'מנחה'},{start:'19:30',end:'20:00',label:'ערבית'}],
+      4:[{start:'06:30',end:'07:00',label:'שחרית'},{start:'13:30',end:'14:00',label:'מנחה'},{start:'19:30',end:'20:00',label:'ערבית'}],
+      5:[{start:'06:30',end:'07:00',label:'שחרית'},{start:'18:15',end:'19:00',label:'קבלת שבת'}],
+      6:[{start:'08:30',end:'09:30',label:'שחרית'},{start:'17:30',end:'18:15',label:'מנחה'},{start:'19:15',end:'19:45',label:'ערבית / הבדלה'}]
+    },
+    note: 'זמני קבלת שבת והבדלה משתנים לפי זמני כניסת/יציאת השבת בעונה — עדכנו בהתאם.'
+  },
+];
+
+/* =========================================================================================
+   קו 10 — תחבורה ציבורית בבסיס
+   כל השעות הן שעת יציאה מרחבת ההיסעים.
+   ========================================================================================= */
+const BUS_ROUTES = [
+  {
+    id: 1, name: 'מסלול 1', minuteOffset: 0,
+    stops: ['רחבת היסעים','ש"ג/בינוי','מנהלה/טירונות','מרפאה','מושל"ם','מגדל/כיבוי','תובלות','ביסמ"ת','ש"ג/בינוי','רחבת היסעים']
+  },
+  {
+    id: 2, name: 'מסלול 2', minuteOffset: 20,
+    stops: ['רחבת היסעים','תקשוב','מנהלה/טירונות','ש"ג/בינוי','רחבת היסעים']
+  },
+  {
+    id: 3, name: 'מסלול 3', minuteOffset: 40,
+    stops: ['רחבת היסעים','הגנ"א/ברוש','רחבת היסעים','ש"ג/בינוי','מנהלה/טירונות','גף רכב','רחבת היסעים']
+  },
+];
+// שעת התחלה כל יום, ושעת הסיום המלאה (א'-ד') מול שעת הסיום המקוצרת (חמישי)
+const BUS_FIRST_HOUR = 8;
+const BUS_LAST_HOUR_NORMAL = 19;   // א'-ד': יציאות עד 19:40
+const BUS_LAST_HOUR_THURSDAY = 17; // חמישי: יציאות עד 17:40 בלבד
+
+function getBusDeparturesForDay(dayIndex){
+  if (dayIndex === 5 || dayIndex === 6) return []; // שישי/שבת - אין קו 10
+  const lastHour = dayIndex === 4 ? BUS_LAST_HOUR_THURSDAY : BUS_LAST_HOUR_NORMAL;
+  const out = [];
+  for (let h = BUS_FIRST_HOUR; h <= lastHour; h++){
+    BUS_ROUTES.forEach(r => out.push({ hour:h, minute:r.minuteOffset, route:r }));
+  }
+  out.sort((a,b)=> (a.hour*60+a.minute) - (b.hour*60+b.minute));
+  return out;
+}
+
+/* =========================================================================================
+   עלון מידע — דרכי הגעה ויציאה מהבסיס (תחבורה ציבורית, קו 392)
+   זהו בלוק תוכן חופשי שמופיע תחת קטגוריית "תחבורה", לצד קו 10 והשאטלים.
+   עדכנו את הטקסט (body - מערך פסקאות), את קישור הסרטון (videoUrl) ואת קישור ההזמנה (linkUrl).
+   ========================================================================================= */
+const TRANSPORT_INFO = {
+  title: 'דרכי הגעה ויציאה מהבסיס — תחבורה ציבורית',
+  body: [
+    'ניתן לצאת מהבסיס ולהגיע אליו באמצעות קו 392 של אגד. מומלץ להזמין כרטיס מראש דרך אתר אגד או האפליקציה.',
+  ],
+  // קישור הטמעה (embed) מיוטיוב, או שם קובץ mp4 מקומי (לדוגמה 'bus-392-guide.mp4') באותה תיקייה של קובץ ה-HTML. השאירו ריק אם עדיין אין סרטון.
+  videoUrl: 'EggedReserevations.mp4',
+  videoCaption: 'הדרכה: איך מזמינים כרטיס לקו 392',
+  linkLabel: 'הזמנת כרטיס באתר אגד',
+  linkUrl: 'https://reserved-seats.egged.co.il/reserved-seats-app/order'
+};
+
+/* =========================================================================================
+   שאטלים — הסעות בסיסיות מהערים לבסיס ובחזרה
+   כל שאטל מחזיק קישור לקבוצת ווטסאפ. ימי הפעילות והשעות המדויקות משתנים - עדכנו את השדה days/note בהתאם.
+   ========================================================================================= */
+const SHUTTLES = [
+  { route: 'אשדוד ← אשקלון ← שדרות ← נתיבות', days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/C87Cs6xvVCiApclabb2Euj' },
+  { route: 'ירושלים ← חמד ← לטרון ← מודיעין',  days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/DUTrgkgJqeHAiaQbrn3rHc' },
+  { route: 'באר שבע ← דימונה ← ערבה',           days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/HyByTqsmkAU3qfyIh6InE3' },
+  { route: 'תל אביב ← בת ים ← ראשון לציון ← רחובות', days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/EHyqn5dea1iLQ9KPXgqI65' },
+  { route: 'פתח תקווה ← קריית אונו',            days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/Ji5hkToZjEI0hJ5soUYee3' },
+  { route: 'כפר סבא ← הרצליה',                  days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/GF91ArrBuJOITp2GWUmeqg' },
+  { route: 'נתניה ← חדרה ← חיפה',               days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/CKkAo84AvbK62KvT1gFJG3' },
+  { route: 'אילת',                              days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/Dvb8A1eJFwK0bawrqPdLo9' },
+];
+// קישורים להתחברות לאפליקציית השאטל - עדכנו לקישורים האמיתיים מהחנויות
+const SHUTTLE_APP_STORE_URL = 'https://apps.apple.com/il/app/שאט-ל-היסעים-צה-ל/id1504198076';   // App Store (אייפון)
+const SHUTTLE_GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.shift.idf&pcampaignid=web_share'; // Google Play (אנדרואיד)
+
+/* =========================================================================================
+   דגשים ונהלים — רובריקת תוכן חופשי, מחולקת לנושאים מתקפלים
+   כל נושא הוא כותרת + רשימת נקודות. הוסיפו/ערכו סעיפים ונושאים חדשים לפי הצורך.
+   ========================================================================================= */
+const GUIDELINES = [
+  {
+    title: 'אבטחת מידע',
+    points: [
+      'אין להכניס טלפונים ניידים או מצלמות לאזורים מוגבלים המסומנים בשילוט.',
+      'כל מסמך המסומן כרגיש יש לאחסן בכספת/ארון נעול בלבד.',
+      'דווחו מיידית על כל אירוע חשוד או אובדן ציוד למחלקת אבטחת מידע.',
+    ]
+  },
+  {
+    title: 'בטיחות',
+    points: [
+      'חובת חגורת בטיחות/ציוד מגן בהתאם לאזור העבודה.',
+      'שמרו על נתיבי מילוט פנויים בכל עת.',
+      'כל תקלה או מפגע בטיחותי יש לדווח מיידית לממונה בטיחות.',
+      'עליכם לציית להוראות של רמזורי ומחסומי הטיסה בכבישים המנהלתיים!, בכל מקרה חצייה של מחסום תתבצע לאחר סריקה של האזור',
+      'כל עבודה על/בקרבת המסלולים מחייבת מעבר תדריך ייעודי/ הסמכת מסלולים ע"י המגדל'
+    ]
+  },
+  {
+    title: 'ספיגה',
+    points: [
+      'בעת התרעה יש לפעול לפי נוהל ספיגה המקומי ולהגיע למרחב המוגן הקרוב ביותר.',
+      'יש להכיר מראש את מיקום המרחבים המוגנים באזור המגורים והעבודה שלכם.',
+      'עדכנו סעיף זה בהתאם לנהלים הרשמיים והעדכניים של הבסיס.',
+    ]
+  },
+];
+
+/* =========================================================================================
+   תהליך קליטה — עדכנו את שמות התחנות והתיאורים בהתאם לבסיס שלכם
+   ========================================================================================= */
+const ABSORPTION_STEPS = [
+  { title: 'דרכי הגעה', desc: 'הגעה באמצעות שאטלים/ הגעה למרכזית ב"ש/אילת ומשם קו 392 לעובדה' },
+  { title: 'ביצוע לומדות', desc: 'לומדות: רפואה, ת"ש, יוהל"ם, אבטחת מידע, חינוך. בקרו ב<a href="https://www.home.idf.il/" target="_blank" rel="noopener noreferrer" style="color: #0000ee; text-decoration: underline;">אתר צה"ל</a>' },
+  { title: 'שיבוץ ליחידה ולחדר', desc: 'קבלת שיבוץ סופי ליחידה, לצוות ולחדר המגורים.' },
+  { title: 'בדיקות רפואיות ראשוניות', desc: 'סבב קצר במרפאה — בדיקת התאמה ופתיחת כרטיס רפואי.' },
+  { title: 'ראיון אישי', desc: 'ראיון עם המפקדים ביחידה' },
+  { title: 'פתיחת כרטיס מגנטי והתחלת שגרה', desc: 'קבלת אמצעי כניסה, כרטיס לחדר אוכל ותחילת פעילות שוטפת.' },
+];
+
+/* =========================================================================================
+   טלפונים חשובים — עדכנו שמות ומספרים אמיתיים
+   ========================================================================================= */
+const PHONES = [
+  { name: 'מושל"ם',          role: '24/7 ,מרכז שליטה בסיסי', number: '08635-9900' },
+  { name: 'מרפאה',    role: 'עזרה ראשונה, מקרים רפואיים', number: '08635-9999' },
+  { name: 'אבטחת מידע',           role: 'בקרה וקבלת כניסה',       number: '08635-9695' },
+  { name: 'חמ"ל הגנ"ק',        role: 'מקרי חירום, דיווח על אירועים, 24/7',  number: '08635-9904' },
+  { name: 'בינוי',               role: 'תשתיות, והנדסה',       number: '08635-9963' },
+  { name: 'מנהלה',               role: 'שירותי טייסת מנהלה, 24/7',       number: '08635-9953' },
+  { name: 'תקשוב',               role: 'טיפול בתקלות',       number: '08635-9976' },
+];
+
+/* =========================================================================================
+   ============================   סוף בלוק ה-CONFIG   ======================================
+   ========================================================================================= */
+
+
+// ---------- עזרים כלליים ----------
+function pad(n){ return String(n).padStart(2,'0'); }
+function toMinutes(hhmm){ const [h,m] = hhmm.split(':').map(Number); return h*60+m; }
+function fmtMinutes(total){
+  const h = Math.floor(total/60), m = total%60;
+  return `${pad(h)}:${pad(m)}`;
+}
+
+function getStatus(service, date){
+  const day = date.getDay();
+  const nowMin = date.getHours()*60 + date.getMinutes();
+  const windows = service.hours[day] || [];
+  for (const w of windows){
+    const s = toMinutes(w.start), e = toMinutes(w.end);
+    if (nowMin >= s && nowMin < e){
+      return { open:true, window:w, closesIn: e - nowMin };
+    }
+  }
+  // סגור כרגע - חפשו את הפתיחה הבאה היום
+  const upcomingToday = windows
+    .map(w => ({ w, s: toMinutes(w.start) }))
+    .filter(x => x.s > nowMin)
+    .sort((a,b)=>a.s-b.s)[0];
+  if (upcomingToday){
+    return { open:false, opensIn: upcomingToday.s - nowMin, opensAt: upcomingToday.w.start, opensDay: DAY_NAMES[day] };
+  }
+  // חפשו קדימה בימים הבאים
+  for (let i=1;i<=7;i++){
+    const d = (day+i) % 7;
+    const win = (service.hours[d] || [])[0];
+    if (win){
+      return { open:false, opensAt: win.start, opensDay: DAY_NAMES[d] };
+    }
+  }
+  return { open:false };
+}
+
+function renderHoursTable(service, todayIdx){
+  let rows = '';
+  for (let d=0; d<7; d++){
+    const windows = service.hours[d] || [];
+    const isToday = d === todayIdx;
+    let cell;
+    if (windows.length === 0){
+      cell = `<span class="closed-txt">סגור</span>`;
+    } else {
+      cell = `<div class="win-list">` + windows.map(w =>
+        `<span class="win">${w.start}–${w.end}${w.label ? `<span class="lbl">${w.label}</span>`:''}</span>`
+      ).join('') + `</div>`;
+    }
+    rows += `<tr class="${isToday?'today':''}"><td class="day-name">${DAY_SHORT[d]}׳</td><td>${cell}</td></tr>`;
+  }
+  return `<table class="hours-table"><tbody>${rows}</tbody></table>`;
+}
+
+// עזר כללי להטמעת סרטון הדרכה (בכרטיסי שירות ובעלון המידע של תחבורה)
+function renderVideoBlock(videoUrl, caption){
+  if (!videoUrl){
+    return `<div class="video-placeholder">📹 כאן יופיע סרטון הדרכה — הוסיפו קישור בשדה videoUrl בבלוק ה-CONFIG</div>`;
+  }
+  const isLocalFile = /\.(mp4|webm|ogg)(\?.*)?$/i.test(videoUrl);
+  const player = isLocalFile
+    ? `<video class="info-video" controls src="${videoUrl}"></video>`
+    : `<div class="video-embed-wrap"><iframe src="${videoUrl}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`;
+  return `${caption ? `<div class="video-caption">${caption}</div>` : ''}${player}`;
+}
+
+// עזר כללי לכפתור הצטרפות לקבוצת ווטסאפ, בעיצוב שנראה כמו הודעה
+function renderWaBubble(url, label){
+  if (!url) return '';
+  return `
+  <a class="wa-bubble" href="${url}" target="_blank" rel="noopener">
+    <span class="wa-icon">💬</span>
+    <span class="wa-text">${label || 'הצטרפות לקבוצת הווטסאפ'}</span>
+  </a>`;
+}
+
+function renderServiceCard(service, date){
+  const status = getStatus(service, date);
+  const todayIdx = date.getDay();
+  let statusLine = '';
+  if (status.open){
+    statusLine = `${status.window.label ? status.window.label+' · ' : ''}נסגר בעוד <b>${status.closesIn} דק׳</b>`;
+  } else if (status.opensAt){
+    statusLine = status.opensDay ? `נפתח ביום ${status.opensDay} בשעה <b>${status.opensAt}</b>` : `נפתח היום בשעה <b>${status.opensAt}</b>`;
+  } else {
+    statusLine = 'אין שעות פעילות מוגדרות';
+  }
+
+  return `
+  <div class="card" id="svc-${service.id}" data-cat="${service.category}" data-name="${service.name}">
+    <div class="card-top">
+      <div class="card-id">
+        <div class="icon-badge">${service.icon}</div>
+        <div>
+          <h3>${service.name}</h3>
+          <div class="cat-tag">${CATEGORIES.find(c=>c.id===service.category).name}</div>
+        </div>
+      </div>
+      <div class="stamp ${status.open?'open':'closed'}">${status.open?'פתוח':'סגור'}</div>
+    </div>
+    <div class="status-line">${statusLine}</div>
+    ${service.note ? `<div class="status-line">${service.note}</div>` : ''}
+    ${renderHoursTable(service, todayIdx)}
+    ${service.videoUrl !== undefined ? `<div class="video-section">${renderVideoBlock(service.videoUrl, service.videoCaption)}</div>` : ''}
+    ${service.waGroupUrl ? renderWaBubble(service.waGroupUrl, service.waGroupLabel) : ''}
+  </div>`;
+}
+
+function renderBusCard(date){
+  const day = date.getDay();
+  const nowMin = date.getHours()*60 + date.getMinutes();
+  const all = getBusDeparturesForDay(day);
+  const upcoming = all.filter(d => (d.hour*60+d.minute) >= nowMin).slice(0,3);
+
+  let nextHtml;
+  if (day === 5 || day === 6){
+    nextHtml = `<div class="bus-empty">אין קו 10 בימי שישי ושבת. הקו הראשון ביום ראשון יוצא ב־08:00.</div>`;
+  } else if (upcoming.length === 0){
+    nextHtml = `<div class="bus-empty">אין עוד הסעות של קו 10 היום. הקו הראשון מחר יוצא ב־08:00${day===3? ' (יום חמישי — הקו פועל עד 18:00 בלבד)':''}.</div>`;
+  } else {
+    nextHtml = `<div class="bus-next">` + upcoming.map(d=>{
+      const depMin = d.hour*60+d.minute;
+      const inMin = depMin - nowMin;
+      return `<div class="bus-chip">
+        <div class="route">${d.route.name}</div>
+        <div class="time mono">${pad(d.hour)}:${pad(d.minute)}</div>
+        <div class="countdown">יוצא בעוד ${inMin} דק׳</div>
+      </div>`;
+    }).join('') + `</div>`;
+  }
+
+  const fullRoutes = BUS_ROUTES.map(r=>{
+    const times = all.filter(d=>d.route.id===r.id).map(d=>`<span class="t">${pad(d.hour)}:${pad(d.minute)}</span>`).join('');
+    return `<div class="bus-route-block">
+      <h4>${r.name}</h4>
+      <div class="stops">${r.stops.join(' ← ')}</div>
+      <div class="times">${times || '<span class="t">אין הסעות היום</span>'}</div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="bus-card" id="svc-bus10" data-cat="transport" data-name="קו 10">
+    <div class="card-top">
+      <div class="card-id">
+        <div class="icon-badge">🚌</div>
+        <div>
+          <h3>קו 10 — תחבורה בבסיס</h3>
+          <div class="cat-tag">שלוש הסעות בשעה, יציאה מרחבת ההיסעים</div>
+        </div>
+      </div>
+    </div>
+    ${nextHtml}
+    <button class="bus-toggle" id="busToggle">הצג לוח זמנים מלא ליום זה ▾</button>
+    <div class="bus-full" id="busFull">${fullRoutes}</div>
+    <div class="bus-note">כל השעות המצוינות הן שעת היציאה מרחבת ההיסעים. ביום חמישי הקו פועל מ8:00-18:00 בלבד. בימי שישי ושבת אין קו 10.</div>
+  </div>`;
+}
+
+function renderTransportInfoCard(){
+  const info = TRANSPORT_INFO;
+  return `
+  <div class="card info-card" id="svc-transport-info" data-cat="transport" data-name="${info.title}">
+    <div class="card-top">
+      <div class="card-id">
+        <div class="icon-badge">🚍</div>
+        <div>
+          <h3>${info.title}</h3>
+          <div class="cat-tag">עדכני, ניתן לעריכה</div>
+        </div>
+      </div>
+    </div>
+    ${info.body.map(p => `<div class="status-line">${p}</div>`).join('')}
+    <div class="video-section">${renderVideoBlock(info.videoUrl, info.videoCaption)}</div>
+    ${info.linkUrl ? `<a class="external-link" href="${info.linkUrl}" target="_blank" rel="noopener">${info.linkLabel} ↗</a>` : ''}
+  </div>`;
+}
+
+function renderShuttlesCard(){
+  const rows = SHUTTLES.map(s => `
+    <div class="shuttle-row">
+      <div class="shuttle-info">
+        <div class="shuttle-route">${s.route}</div>
+        <div class="shuttle-days">ימי פעילות: ${s.days}</div>
+      </div>
+      ${renderWaBubble(s.whatsapp, 'הצטרפות לקבוצה')}
+    </div>
+  `).join('');
+
+  const appButtons = [
+    SHUTTLE_APP_STORE_URL ? `<a class="external-link" href="${SHUTTLE_APP_STORE_URL}" target="_blank" rel="noopener"> הורדת אפליקציית שאטל מ App Store ↗</a>` : '',
+    SHUTTLE_GOOGLE_PLAY_URL ? `<a class="external-link" href="${SHUTTLE_GOOGLE_PLAY_URL}" target="_blank" rel="noopener"> הורדת אפליקציית שאטל מ Google Play ↗</a>` : ''
+  ].join('');
+
+  const appSection = appButtons
+    ? `<div class="app-links-row">${appButtons}</div>`
+    : `<div class="video-placeholder">📲 כאן יופיעו קישורים להתחברות לאפליקציית השאטל — עדכנו את SHUTTLE_APP_STORE_URL ו-SHUTTLE_GOOGLE_PLAY_URL בבלוק ה-CONFIG</div>`;
+
+  return `
+  <div class="card info-card" id="svc-shuttles" data-cat="transport" data-name="שאטלים">
+    <div class="card-top">
+      <div class="card-id">
+        <div class="icon-badge">🚐</div>
+        <div>
+          <h3>שאטלים מהבסיס ואליו</h3>
+          <div class="cat-tag">הצטרפו לקבוצת הווטסאפ המתאימה למסלול שלכם</div>
+        </div>
+      </div>
+    </div>
+    <div class="shuttle-list">${rows}</div>
+    ${appSection}
+  </div>`;
+}
+
+function renderTimeline(){
+  return ABSORPTION_STEPS.map(s => `
+    <div class="tl-step">
+      <div class="tl-num"></div>
+      <div class="tl-body">
+        <h4>${s.title}</h4>
+        <p>${s.desc}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderPhones(){
+  return PHONES.map(p => `
+    <div class="phone-card">
+      <div>
+        <div class="name">${p.name}</div>
+        <div class="role">${p.role}</div>
+      </div>
+      <a class="dial" href="tel:${p.number}">📞 ${p.number}</a>
+    </div>
+  `).join('');
+}
+
+function renderGuidelines(){
+  return GUIDELINES.map((g, i) => `
+    <details class="guideline-block" ${i===0 ? 'open' : ''}>
+      <summary>${g.title}</summary>
+      <ul>${g.points.map(p => `<li>${p}</li>`).join('')}</ul>
+    </details>
+  `).join('');
+}
+
+// ---------- ניווט קטגוריות ----------
+let activeCat = 'all';
+
+function renderCats(){
+  const counts = {};
+  SERVICES.forEach(s => counts[s.category] = (counts[s.category]||0)+1);
+  const transportCount = 1 + SHUTTLES.length + 1; // קו 10 + שאטלים + עלון מידע
+  const onboardingCount = ABSORPTION_STEPS.length; // תהליך קליטה - רובריקה נפרדת, לא נספרת תחת "הכל"
+  const guidelinesCount = GUIDELINES.length; // דגשים ונהלים - רובריקה נפרדת, לא נספרת תחת "הכל"
+
+  const items = [
+    { id:'all', name:'כל השירותים', icon:'🗂', count: SERVICES.length + 1 }, // שירותים + קו 10 בלבד
+    { id:'phones', name:'טלפונים', icon:'📞', count: PHONES.length },
+    ...CATEGORIES.map(c => ({
+      ...c,
+      count: c.id==='transport' ? transportCount : c.id==='onboarding' ? onboardingCount : c.id==='guidelines' ? guidelinesCount : (counts[c.id]||0)
+    }))
+  ];
+
+  document.getElementById('catsRow').innerHTML = items.map(c => `
+    <button class="cat-btn ${c.id===activeCat?'active':''}" data-cat="${c.id}">
+      <span>${c.icon}</span><span>${c.name}</span><span class="n">${c.count}</span>
+    </button>
+  `).join('');
+
+  document.querySelectorAll('.cat-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      activeCat = btn.dataset.cat;
+      renderCats();
+      renderServices();
+    });
+  });
+}
+
+function renderServices(){
+  const date = new Date();
+  const eyebrow = document.getElementById('blockEyebrow');
+  const titleEl = document.getElementById('blockTitle');
+  const container = document.getElementById('servicesGrid');
+
+  // רובריקת קליטה היא נפרדת לגמרי מרשימת השירותים/תחבורה - תצוגה משלה
+  if (activeCat === 'onboarding'){
+    eyebrow.textContent = 'קליטה';
+    titleEl.textContent = 'תהליך הקליטה — שש תחנות מרגע ההגעה';
+    container.className = 'timeline';
+    container.innerHTML = renderTimeline();
+    return;
+  }
+
+  // רובריקת טלפונים היא גם היא נפרדת - לא מוצגת יחד עם שירותים אחרים
+  if (activeCat === 'phones'){
+    eyebrow.textContent = 'טלפונים';
+    titleEl.textContent = 'טלפונים חשובים — חייגו בלחיצה אחת';
+    container.className = 'phones-grid';
+    container.innerHTML = renderPhones();
+    return;
+  }
+
+  // רובריקת דגשים ונהלים - תוכן חופשי מחולק לנושאים מתקפלים
+  if (activeCat === 'guidelines'){
+    eyebrow.textContent = 'נהלים';
+    titleEl.textContent = 'נהלים בבסיס';
+    container.className = 'guidelines-list';
+    container.innerHTML = renderGuidelines();
+    return;
+  }
+
+  eyebrow.textContent = activeCat === 'all' ? 'כל השירותים' : CATEGORIES.find(c=>c.id===activeCat).name;
+  titleEl.textContent = '';
+  container.className = 'grid';
+
+  let html = '';
+  SERVICES.forEach(s=>{
+    if (activeCat === 'all' || activeCat === s.category){
+      html += renderServiceCard(s, date);
+    }
+  });
+  if (activeCat === 'all' || activeCat === 'transport'){
+    html += renderBusCard(date);
+    html += renderShuttlesCard();
+    html += renderTransportInfoCard();
+  }
+  container.innerHTML = html || `<div class="status-line">אין שירותים בקטגוריה זו.</div>`;
+
+  const toggle = document.getElementById('busToggle');
+  if (toggle){
+    toggle.addEventListener('click', ()=>{
+      const full = document.getElementById('busFull');
+      full.classList.toggle('show');
+      toggle.textContent = full.classList.contains('show') ? 'הסתר לוח זמנים מלא ▴' : 'הצג לוח זמנים מלא ליום זה ▾';
+    });
+  }
+}
+
+// ---------- שעון חי ----------
+function tickClock(){
+  const now = new Date();
+  document.getElementById('clockTime').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  document.getElementById('clockDay').textContent = `יום ${DAY_NAMES[now.getDay()]}`;
+}
+
+// ---------- חיפוש ----------
+const SEARCHABLE = [
+  ...SERVICES.map(s => ({ id:s.id, name:s.name, anchor:`svc-${s.id}` })),
+  { id:'bus10', name:'קו 10', anchor:'svc-bus10' },
+  { id:'shuttles', name:'שאטלים', anchor:'svc-shuttles' },
+  { id:'transport-info', name:'קו 392', anchor:'svc-transport-info' },
+  { id:'onboarding', name:'קליטה', cat:'onboarding' }, // רובריקה נפרדת - קופצת לקטגוריה, לא לכרטיס
+  { id:'phones', name:'טלפונים', cat:'phones' },
+  { id:'guidelines', name:'נהלים', cat:'guidelines' },
+];
+
+function renderSearchResults(query){
+  const box = document.getElementById('searchResults');
+  if (!query.trim()){
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+  const matches = SEARCHABLE.filter(item => item.name.includes(query.trim()));
+  if (matches.length === 0){
+    box.innerHTML = `<div class="empty">לא נמצאה התאמה ל"${query}"</div>`;
+  } else {
+    box.innerHTML = matches.map(m => `<button data-anchor="${m.anchor||''}" data-cat="${m.cat||''}">🔎 ${m.name}</button>`).join('');
+  }
+  box.classList.add('show');
+
+  box.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if (btn.dataset.cat){ goToCategory(btn.dataset.cat); }
+      else { goToService(btn.dataset.anchor); }
+      box.classList.remove('show');
+      document.getElementById('searchInput').value = '';
+    });
+  });
+}
+
+function goToService(anchorId){
+  // ודאו שהקטגוריה הרלוונטית מוצגת
+  activeCat = 'all';
+  renderCats();
+  renderServices();
+  requestAnimationFrame(()=>{
+    const el = document.getElementById(anchorId);
+    if (el){
+      el.scrollIntoView({ behavior:'smooth', block:'center' });
+      el.classList.add('flash');
+      setTimeout(()=> el.classList.remove('flash'), 1700);
+    }
+  });
+}
+
+function goToCategory(catId){
+  activeCat = catId;
+  renderCats();
+  renderServices();
+  document.getElementById('servicesBlock').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+document.getElementById('searchInput').addEventListener('input', e => renderSearchResults(e.target.value));
+document.getElementById('searchInput').addEventListener('keydown', e=>{
+  if (e.key === 'Enter'){
+    const query = e.target.value.trim();
+    const match = SEARCHABLE.find(item => item.name.includes(query));
+    if (match) {
+      if (match.cat) goToCategory(match.cat); else goToService(match.anchor);
+      document.getElementById('searchResults').classList.remove('show'); e.target.value='';
+    }
+  }
+});
+document.addEventListener('click', e=>{
+  if (!e.target.closest('.search-wrap')) document.getElementById('searchResults').classList.remove('show');
+});
+
+// ---------- אתחול ----------
+function init(){
+  renderCats();
+  renderServices();
+  tickClock();
+  setInterval(()=>{
+    tickClock();
+    renderServices(); // מרענן סטטוסים וזמני קו 10 מדי דקה
+  }, 30000);
+}
+
+init();
+</script>
+</body>
+</html>
