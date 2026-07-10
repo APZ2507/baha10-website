@@ -792,10 +792,10 @@ const BUS_LAST_HOUR_THURSDAY = 17; // חמישי: יציאות עד 17:40 בלב
 
 function getBusDeparturesForDay(dayIndex){
   if (dayIndex === 5 || dayIndex === 6) return []; // שישי/שבת - אין קו 10
-  const lastHour = dayIndex === 4 ? BUS_LAST_HOUR_THURSDAY : BUS_LAST_HOUR_NORMAL;
+  const lastHour = dayIndex === 4 ? LIVE_BUS_HOURS.lastHourThursday : LIVE_BUS_HOURS.lastHourNormal;
   const out = [];
-  for (let h = BUS_FIRST_HOUR; h <= lastHour; h++){
-    BUS_ROUTES.forEach(r => out.push({ hour:h, minute:r.minuteOffset, route:r }));
+  for (let h = LIVE_BUS_HOURS.firstHour; h <= lastHour; h++){
+    LIVE_BUS_ROUTES.forEach(r => out.push({ hour:h, minute:r.minuteOffset, route:r }));
   }
   out.sort((a,b)=> (a.hour*60+a.minute) - (b.hour*60+b.minute));
   return out;
@@ -899,6 +899,46 @@ const PHONES = [
    ============================   סוף בלוק ה-CONFIG   ======================================
    ========================================================================================= */
 
+/* =========================================================================================
+   שכבת נתונים חיה - האתר קורא את התוכן העדכני מ-data.json בכל טעינת עמוד.
+   כל הערכים הקבועים למעלה (SERVICES / PHONES / BUS_ROUTES / GUIDELINES וכו') הם רק "רשת ביטחון" -
+   ברירת מחדל שתוצג אם מסיבה כלשהי data.json לא זמין (למשל בדיקה מקומית של הקובץ בלי שרת,
+   או אם הקובץ עדיין לא קיים בריפו). ברגע ש-data.json קיים - הוא זה שקובע את מה שמוצג בפועל.
+   ========================================================================================= */
+let LIVE_SERVICES = [];
+let LIVE_PHONES = [];
+let LIVE_BUS_ROUTES = [];
+let LIVE_BUS_HOURS = {};
+let LIVE_TRANSPORT_INFO = {};
+let LIVE_SHUTTLES = [];
+let LIVE_SHUTTLE_APPS = {};
+let LIVE_GUIDELINES = [];
+let LIVE_ABSORPTION_STEPS = [];
+
+async function loadRemoteData(){
+  try {
+    const res = await fetch('data.json', { cache: 'no-store' });
+    if (res.ok) return await res.json();
+  } catch(e){ /* אין data.json או שאין רשת - נשארים עם ברירת המחדל הקבועה למעלה */ }
+  return null;
+}
+
+function rebuildLiveData(remote){
+  if (remote && remote.services){
+    LIVE_SERVICES = Object.entries(remote.services).map(([id, s]) => ({ id, ...s }));
+  } else {
+    LIVE_SERVICES = SERVICES.map(s=>({...s}));
+  }
+  LIVE_PHONES          = (remote && remote.phones && remote.phones.length) ? remote.phones : PHONES.map(p=>({...p}));
+  LIVE_BUS_ROUTES       = (remote && remote.busRoutes && remote.busRoutes.length) ? remote.busRoutes : BUS_ROUTES.map(r=>({...r}));
+  LIVE_BUS_HOURS         = (remote && remote.busHours) ? remote.busHours : { firstHour: BUS_FIRST_HOUR, lastHourNormal: BUS_LAST_HOUR_NORMAL, lastHourThursday: BUS_LAST_HOUR_THURSDAY };
+  LIVE_TRANSPORT_INFO    = (remote && remote.transportInfo) ? remote.transportInfo : TRANSPORT_INFO;
+  LIVE_SHUTTLES          = (remote && remote.shuttles && remote.shuttles.length) ? remote.shuttles : SHUTTLES.map(s=>({...s}));
+  LIVE_SHUTTLE_APPS      = (remote && remote.shuttleApps) ? remote.shuttleApps : { appStoreUrl: SHUTTLE_APP_STORE_URL, googlePlayUrl: SHUTTLE_GOOGLE_PLAY_URL };
+  LIVE_GUIDELINES        = (remote && remote.guidelines && remote.guidelines.length) ? remote.guidelines : GUIDELINES.map(g=>({...g}));
+  LIVE_ABSORPTION_STEPS  = (remote && remote.absorptionSteps && remote.absorptionSteps.length) ? remote.absorptionSteps : ABSORPTION_STEPS.map(s=>({...s}));
+}
+rebuildLiveData(null); // ברירת מחדל מיידית, לפני שהבקשה ל-data.json חוזרת מהשרת
 
 // ---------- עזרים כלליים ----------
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -1056,7 +1096,7 @@ function renderBusCard(date){
     }).join('') + `</div>`;
   }
 
-  const fullRoutes = BUS_ROUTES.map(r=>{
+  const fullRoutes = LIVE_BUS_ROUTES.map(r=>{
     const times = all.filter(d=>d.route.id===r.id).map(d=>`<span class="t">${pad(d.hour)}:${pad(d.minute)}</span>`).join('');
     return `<div class="bus-route-block">
       <h4>${r.name}</h4>
@@ -1079,12 +1119,12 @@ function renderBusCard(date){
     ${nextHtml}
     <button class="bus-toggle" id="busToggle">הצג לוח זמנים מלא ליום זה ▾</button>
     <div class="bus-full" id="busFull">${fullRoutes}</div>
-    <div class="bus-note">כל השעות המצוינות הן שעת היציאה מרחבת ההיסעים. ביום חמישי הקו פועל מ8:00-18:00 בלבד. בימי שישי ושבת אין קו 10.</div>
+    <div class="bus-note">כל השעות המצוינות הן שעת היציאה מרחבת ההיסעים. ביום חמישי הקו פועל עד השעה ${pad(LIVE_BUS_HOURS.lastHourThursday)}:40 בלבד. בימי שישי ושבת אין קו 10.</div>
   </div>`;
 }
 
 function renderTransportInfoCard(){
-  const info = TRANSPORT_INFO;
+  const info = LIVE_TRANSPORT_INFO;
   return `
   <div class="card info-card" id="svc-transport-info" data-cat="transport" data-name="${info.title}">
     <div class="card-top">
@@ -1103,7 +1143,7 @@ function renderTransportInfoCard(){
 }
 
 function renderShuttlesCard(){
-  const rows = SHUTTLES.map(s => `
+  const rows = LIVE_SHUTTLES.map(s => `
     <div class="shuttle-row">
       <div class="shuttle-info">
         <div class="shuttle-route">${s.route}</div>
@@ -1114,13 +1154,13 @@ function renderShuttlesCard(){
   `).join('');
 
   const appButtons = [
-    SHUTTLE_APP_STORE_URL ? `<a class="external-link" href="${SHUTTLE_APP_STORE_URL}" target="_blank" rel="noopener"> הורדת אפליקציית שאטל מ App Store ↗</a>` : '',
-    SHUTTLE_GOOGLE_PLAY_URL ? `<a class="external-link" href="${SHUTTLE_GOOGLE_PLAY_URL}" target="_blank" rel="noopener"> הורדת אפליקציית שאטל מ Google Play ↗</a>` : ''
+    LIVE_SHUTTLE_APPS.appStoreUrl ? `<a class="external-link" href="${LIVE_SHUTTLE_APPS.appStoreUrl}" target="_blank" rel="noopener"> הורדת אפליקציית שאטל מ App Store ↗</a>` : '',
+    LIVE_SHUTTLE_APPS.googlePlayUrl ? `<a class="external-link" href="${LIVE_SHUTTLE_APPS.googlePlayUrl}" target="_blank" rel="noopener"> הורדת אפליקציית שאטל מ Google Play ↗</a>` : ''
   ].join('');
 
   const appSection = appButtons
     ? `<div class="app-links-row">${appButtons}</div>`
-    : `<div class="video-placeholder">📲 כאן יופיעו קישורים להתחברות לאפליקציית השאטל — עדכנו את SHUTTLE_APP_STORE_URL ו-SHUTTLE_GOOGLE_PLAY_URL בבלוק ה-CONFIG</div>`;
+    : `<div class="video-placeholder">📲 כאן יופיעו קישורים להתחברות לאפליקציית השאטל — עדכנו ב-data.json</div>`;
 
   return `
   <div class="card info-card" id="svc-shuttles" data-cat="transport" data-name="שאטלים">
@@ -1139,7 +1179,7 @@ function renderShuttlesCard(){
 }
 
 function renderTimeline(){
-  return ABSORPTION_STEPS.map(s => `
+  return LIVE_ABSORPTION_STEPS.map(s => `
     <div class="tl-step">
       <div class="tl-num"></div>
       <div class="tl-body">
@@ -1151,7 +1191,7 @@ function renderTimeline(){
 }
 
 function renderPhones(){
-  return PHONES.map(p => `
+  return LIVE_PHONES.map(p => `
     <div class="phone-card">
       <div>
         <div class="name">${p.name}</div>
@@ -1163,7 +1203,7 @@ function renderPhones(){
 }
 
 function renderGuidelines(){
-  return GUIDELINES.map((g, i) => `
+  return LIVE_GUIDELINES.map((g, i) => `
     <details class="guideline-block" ${i===0 ? 'open' : ''}>
       <summary>${g.title}</summary>
       <ul>${g.points.map(p => `<li>${p}</li>`).join('')}</ul>
@@ -1176,14 +1216,14 @@ let activeCat = 'all';
 
 function renderCats(){
   const counts = {};
-  SERVICES.forEach(s => counts[s.category] = (counts[s.category]||0)+1);
-  const transportCount = 1 + SHUTTLES.length + 1; // קו 10 + שאטלים + עלון מידע
-  const onboardingCount = ABSORPTION_STEPS.length; // תהליך קליטה - רובריקה נפרדת, לא נספרת תחת "הכל"
-  const guidelinesCount = GUIDELINES.length; // דגשים ונהלים - רובריקה נפרדת, לא נספרת תחת "הכל"
+  LIVE_SERVICES.forEach(s => counts[s.category] = (counts[s.category]||0)+1);
+  const transportCount = 1 + LIVE_SHUTTLES.length + 1; // קו 10 + שאטלים + עלון מידע
+  const onboardingCount = LIVE_ABSORPTION_STEPS.length; // תהליך קליטה - רובריקה נפרדת, לא נספרת תחת "הכל"
+  const guidelinesCount = LIVE_GUIDELINES.length; // דגשים ונהלים - רובריקה נפרדת, לא נספרת תחת "הכל"
 
   const items = [
-    { id:'all', name:'כל השירותים', icon:'🗂', count: SERVICES.length + 1 }, // שירותים + קו 10 בלבד
-    { id:'phones', name:'טלפונים', icon:'📞', count: PHONES.length },
+    { id:'all', name:'כל השירותים', icon:'🗂', count: LIVE_SERVICES.length + 1 }, // שירותים + קו 10 בלבד
+    { id:'phones', name:'טלפונים', icon:'📞', count: LIVE_PHONES.length },
     ...CATEGORIES.map(c => ({
       ...c,
       count: c.id==='transport' ? transportCount : c.id==='onboarding' ? onboardingCount : c.id==='guidelines' ? guidelinesCount : (counts[c.id]||0)
@@ -1243,7 +1283,7 @@ function renderServices(){
   container.className = 'grid';
 
   let html = '';
-  SERVICES.forEach(s=>{
+  LIVE_SERVICES.forEach(s=>{
     if (activeCat === 'all' || activeCat === s.category){
       html += renderServiceCard(s, date);
     }
@@ -1273,15 +1313,17 @@ function tickClock(){
 }
 
 // ---------- חיפוש ----------
-const SEARCHABLE = [
-  ...SERVICES.map(s => ({ id:s.id, name:s.name, anchor:`svc-${s.id}` })),
-  { id:'bus10', name:'קו 10', anchor:'svc-bus10' },
-  { id:'shuttles', name:'שאטלים', anchor:'svc-shuttles' },
-  { id:'transport-info', name:'קו 392', anchor:'svc-transport-info' },
-  { id:'onboarding', name:'קליטה', cat:'onboarding' }, // רובריקה נפרדת - קופצת לקטגוריה, לא לכרטיס
-  { id:'phones', name:'טלפונים', cat:'phones' },
-  { id:'guidelines', name:'נהלים', cat:'guidelines' },
-];
+function getSearchable(){
+  return [
+    ...LIVE_SERVICES.map(s => ({ id:s.id, name:s.name, anchor:`svc-${s.id}` })),
+    { id:'bus10', name:'קו 10', anchor:'svc-bus10' },
+    { id:'shuttles', name:'שאטלים', anchor:'svc-shuttles' },
+    { id:'transport-info', name:'קו 392', anchor:'svc-transport-info' },
+    { id:'onboarding', name:'קליטה', cat:'onboarding' }, // רובריקה נפרדת - קופצת לקטגוריה, לא לכרטיס
+    { id:'phones', name:'טלפונים', cat:'phones' },
+    { id:'guidelines', name:'נהלים', cat:'guidelines' },
+  ];
+}
 
 function renderSearchResults(query){
   const box = document.getElementById('searchResults');
@@ -1290,7 +1332,7 @@ function renderSearchResults(query){
     box.innerHTML = '';
     return;
   }
-  const matches = SEARCHABLE.filter(item => item.name.includes(query.trim()));
+  const matches = getSearchable().filter(item => item.name.includes(query.trim()));
   if (matches.length === 0){
     box.innerHTML = `<div class="empty">לא נמצאה התאמה ל"${query}"</div>`;
   } else {
@@ -1334,7 +1376,7 @@ document.getElementById('searchInput').addEventListener('input', e => renderSear
 document.getElementById('searchInput').addEventListener('keydown', e=>{
   if (e.key === 'Enter'){
     const query = e.target.value.trim();
-    const match = SEARCHABLE.find(item => item.name.includes(query));
+    const match = getSearchable().find(item => item.name.includes(query));
     if (match) {
       if (match.cat) goToCategory(match.cat); else goToService(match.anchor);
       document.getElementById('searchResults').classList.remove('show'); e.target.value='';
@@ -1366,6 +1408,14 @@ function init(){
   });
   document.addEventListener('keydown', e=>{
     if (e.key === 'Escape') closeVideoModal();
+  });
+
+  // טוענים את data.json (המצב המפורסם בפועל) ומרעננים את התצוגה כשהוא מגיע.
+  // עד אז מוצגת ברירת המחדל הקבועה בקוד, כדי שהעמוד לא יישאר ריק בזמן ההמתנה.
+  loadRemoteData().then(remote=>{
+    rebuildLiveData(remote);
+    renderCats();
+    renderServices();
   });
 }
 
