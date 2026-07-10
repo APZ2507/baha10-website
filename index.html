@@ -381,7 +381,7 @@ section.block{margin-bottom:44px;}
 .phone-card a.dial:hover{background:var(--steel); color:#fff;}
 
 /* =========================================================
-   סרטוני הדרכה (מוטמעים בכרטיסי שירות ובעלוני מידע)
+   סרטוני הדרכה - כפתור קומפקטי שפותח נגן במסך מלא (מודל)
    ========================================================= */
 .video-section{margin-top:14px;}
 .video-placeholder{
@@ -389,10 +389,42 @@ section.block{margin-bottom:44px;}
   border-radius:10px; padding:16px; text-align:center;
   font-size:13px; color:var(--ink-soft); background:var(--panel-2);
 }
-.video-caption{font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;}
+.video-trigger{
+  display:flex; align-items:center; gap:10px; width:100%;
+  background:var(--panel-2); border:1px solid rgba(72,87,59,0.18);
+  border-radius:10px; padding:11px 14px; cursor:pointer;
+  font-family:'Assistant',sans-serif; font-size:13.5px; font-weight:600; color:var(--ink);
+  text-align:right; transition:background .15s;
+}
+.video-trigger:hover{background:var(--panel);}
+.video-trigger .vt-icon{
+  flex-shrink:0; width:30px; height:30px; border-radius:50%;
+  background:var(--olive); color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:12px;
+}
+
+/* מודל וידאו במסך מלא */
+.video-modal{
+  position:fixed; inset:0; z-index:200;
+  background:rgba(24,16,12,0.88);
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.video-modal.show{display:flex;}
+.video-modal-inner{
+  background:var(--panel); border-radius:14px; padding:18px;
+  max-width:900px; width:100%; position:relative;
+  box-shadow:0 20px 60px -20px rgba(0,0,0,0.6);
+}
+.video-modal-close{
+  position:absolute; top:-14px; left:-14px;
+  width:34px; height:34px; border-radius:50%;
+  background:var(--olive-dark); color:#fff; border:2px solid var(--panel);
+  font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.video-modal-caption{font-family:'Heebo',sans-serif; font-weight:800; font-size:15px; color:var(--olive-dark); margin-bottom:12px;}
 .video-embed-wrap{position:relative; width:100%; padding-top:56.25%; border-radius:10px; overflow:hidden;}
 .video-embed-wrap iframe{position:absolute; inset:0; width:100%; height:100%; border:0;}
-.info-video{width:100%; border-radius:10px; display:block;}
+.info-video{width:100%; border-radius:10px; display:block; max-height:75vh;}
 
 /* =========================================================
    קישור חיצוני (לדוגמה הזמנת כרטיס אגד)
@@ -470,6 +502,15 @@ footer{
 </style>
 </head>
 <body>
+
+<!-- מודל לצפייה בסרטוני הדרכה במסך מלא - נפתח בלחיצה על כפתור "צפו בסרטון" בכל כרטיס -->
+<div class="video-modal" id="videoModal">
+  <div class="video-modal-inner">
+    <button class="video-modal-close" id="videoModalClose" aria-label="סגירה">✕</button>
+    <div class="video-modal-caption" id="videoModalCaption"></div>
+    <div id="videoModalMedia"></div>
+  </div>
+</div>
 
 <!-- באנר שער עם תמונת הרקע. להחלפת התמונה: החליפו את הקובץ header-bg.png באותה תיקייה בתמונה אחרת עם אותו שם, או שנו את הנתיב ב-CSS (מחלקת .hero-banner). למחיקת הבאנר לגמרי - מחקו את השורה הבאה ואת בלוק ה-CSS התואם (.hero-banner). -->
 <div class="hero-banner"></div>
@@ -573,6 +614,19 @@ const SERVICES = [
       2:[{start:'08:00',end:'16:00'}], 3:[{start:'08:00',end:'16:00'}],
       4:[{start:'08:00',end:'16:00'}], 5:[], 6:[]
     },
+  },
+  {
+    // שעות קבלה לדוגמה - עדכנו לפי הזמינות בפועל של קצין הפסיכולוגיה
+    id: 'mental-health',
+    name: 'בריאות הנפש',
+    category: 'health',
+    icon: '🧠',
+    hours: {
+      0:[{start:'09:00',end:'13:00'}], 1:[],
+      2:[{start:'09:00',end:'13:00'}], 3:[],
+      4:[{start:'09:00',end:'13:00'}], 5:[], 6:[]
+    },
+    note: 'קבלה אצל קצין הפסיכולוגיה - בתיאום מראש. למקרה דחוף פנו למרפאה או לתורן הבסיס.'
   },
   {
     id: 'gym',
@@ -690,7 +744,9 @@ const SERVICES = [
       4:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
       5:[{start:'07:00',end:'09:00'}], 
       6:[{start:'18:00',end:'19:00'}]
-    }
+    },
+    videoUrl: 'WeaponForm.mp4',
+    videoCaption: 'הדרכת מילוי טופס נשק דיגיטלי באתר "בסיס חכם"'
   },
   {
     // שעות לדוגמה - עדכנו לפי זמני התפילות בפועל בבית הכנסת של הבסיס
@@ -899,15 +955,39 @@ function renderHoursTable(service, todayIdx){
 }
 
 // עזר כללי להטמעת סרטון הדרכה (בכרטיסי שירות ובעלון המידע של תחבורה)
+// רישום סרטונים לפי מזהה, כדי להימנע מבעיות ציטוט כשה-URL מכיל תווים מיוחדים
+const VIDEO_REGISTRY = {};
+let videoRegistryCounter = 0;
+
 function renderVideoBlock(videoUrl, caption){
   if (!videoUrl){
     return `<div class="video-placeholder">📹 כאן יופיע סרטון הדרכה — הוסיפו קישור בשדה videoUrl בבלוק ה-CONFIG</div>`;
   }
-  const isLocalFile = /\.(mp4|webm|ogg)(\?.*)?$/i.test(videoUrl);
-  const player = isLocalFile
-    ? `<video class="info-video" controls src="${videoUrl}"></video>`
-    : `<div class="video-embed-wrap"><iframe src="${videoUrl}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`;
-  return `${caption ? `<div class="video-caption">${caption}</div>` : ''}${player}`;
+  const key = `v${videoRegistryCounter++}`;
+  VIDEO_REGISTRY[key] = { url: videoUrl, caption: caption || '' };
+  return `
+  <button class="video-trigger" data-video-key="${key}">
+    <span class="vt-icon">▶</span>
+    <span>${caption || 'צפו בסרטון ההדרכה'}</span>
+  </button>`;
+}
+
+function openVideoModal(key){
+  const item = VIDEO_REGISTRY[key];
+  if (!item) return;
+  const isLocalFile = /\.(mp4|webm|ogg)(\?.*)?$/i.test(item.url);
+  const media = isLocalFile
+    ? `<video class="info-video" controls autoplay src="${item.url}"></video>`
+    : `<div class="video-embed-wrap"><iframe src="${item.url}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`;
+  document.getElementById('videoModalCaption').textContent = item.caption;
+  document.getElementById('videoModalMedia').innerHTML = media;
+  document.getElementById('videoModal').classList.add('show');
+}
+
+function closeVideoModal(){
+  document.getElementById('videoModal').classList.remove('show');
+  document.getElementById('videoModalMedia').innerHTML = ''; // עוצר ניגון בעת סגירה
+  document.getElementById('videoModalCaption').textContent = '';
 }
 
 // עזר כללי לכפתור הצטרפות לקבוצת ווטסאפ, בעיצוב שנראה כמו הודעה
@@ -1273,6 +1353,19 @@ function init(){
     tickClock();
     renderServices(); // מרענן סטטוסים וזמני קו 10 מדי דקה
   }, 30000);
+
+  // פתיחת מודל הווידאו בלחיצה על כל כפתור "צפו בסרטון" (Event delegation - עובד גם עבור כרטיסים שנטענים מחדש)
+  document.addEventListener('click', e=>{
+    const trigger = e.target.closest('.video-trigger');
+    if (trigger) openVideoModal(trigger.dataset.videoKey);
+  });
+  document.getElementById('videoModalClose').addEventListener('click', closeVideoModal);
+  document.getElementById('videoModal').addEventListener('click', e=>{
+    if (e.target.id === 'videoModal') closeVideoModal(); // לחיצה על הרקע הכהה סוגרת
+  });
+  document.addEventListener('keydown', e=>{
+    if (e.key === 'Escape') closeVideoModal();
+  });
 }
 
 init();
