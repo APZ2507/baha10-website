@@ -923,14 +923,48 @@ async function loadRemoteData(){
   return null;
 }
 
+// ---------- פענוח פורמט קומפקטי מ-data.json ----------
+// שעות מגיעות כמחרוזת קריאה לבני אדם כמו "08:00-16:00, 18:00-20:00 (תגית)" - הופכים למבנה הפנימי {start,end,label?}
+function parseHoursDay(text){
+  if (!text || !text.trim()) return [];
+  return text.split(',').map(seg=>seg.trim()).filter(Boolean).map(seg=>{
+    const m = seg.match(/^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})(?:\s*\(([^)]+)\))?$/);
+    if (!m) return null;
+    const norm = t => t.split(':').map((x,i)=> i===0 ? x.padStart(2,'0') : x).join(':');
+    const win = { start: norm(m[1]), end: norm(m[2]) };
+    if (m[3]) win.label = m[3].trim();
+    return win;
+  }).filter(Boolean);
+}
+function parseServiceFromRemote(id, s){
+  const hours = {};
+  for (let d=0; d<7; d++){
+    hours[d] = parseHoursDay(s.hours ? s.hours[String(d)] : '');
+  }
+  return {
+    id, name:s.name, category:s.category, icon:s.icon, hours,
+    note: s.note||'', videoUrl: s.videoUrl||'', videoCaption: s.videoCaption||'',
+    waGroupUrl: s.waGroupUrl||'', waGroupLabel: s.waGroupLabel||''
+  };
+}
+// תחנות מגיעות כמחרוזת אחת "תחנה א ← תחנה ב ← תחנה ג" - הופכים למערך תחנות
+function parseBusRouteFromRemote(r){
+  const stops = typeof r.stops === 'string'
+    ? r.stops.split('←').map(x=>x.trim()).filter(Boolean)
+    : (r.stops || []);
+  return { id:r.id, name:r.name, minuteOffset:r.minuteOffset, stops };
+}
+
 function rebuildLiveData(remote){
   if (remote && remote.services){
-    LIVE_SERVICES = Object.entries(remote.services).map(([id, s]) => ({ id, ...s }));
+    LIVE_SERVICES = Object.entries(remote.services)
+      .filter(([id]) => !id.startsWith('_')) // מתעלמים מכל מפתח שמתחיל ב-_ (כמו _instructions)
+      .map(([id, s]) => parseServiceFromRemote(id, s));
   } else {
     LIVE_SERVICES = SERVICES.map(s=>({...s}));
   }
   LIVE_PHONES          = (remote && remote.phones && remote.phones.length) ? remote.phones : PHONES.map(p=>({...p}));
-  LIVE_BUS_ROUTES       = (remote && remote.busRoutes && remote.busRoutes.length) ? remote.busRoutes : BUS_ROUTES.map(r=>({...r}));
+  LIVE_BUS_ROUTES       = (remote && remote.busRoutes && remote.busRoutes.length) ? remote.busRoutes.map(parseBusRouteFromRemote) : BUS_ROUTES.map(r=>({...r}));
   LIVE_BUS_HOURS         = (remote && remote.busHours) ? remote.busHours : { firstHour: BUS_FIRST_HOUR, lastHourNormal: BUS_LAST_HOUR_NORMAL, lastHourThursday: BUS_LAST_HOUR_THURSDAY };
   LIVE_TRANSPORT_INFO    = (remote && remote.transportInfo) ? remote.transportInfo : TRANSPORT_INFO;
   LIVE_SHUTTLES          = (remote && remote.shuttles && remote.shuttles.length) ? remote.shuttles : SHUTTLES.map(s=>({...s}));
