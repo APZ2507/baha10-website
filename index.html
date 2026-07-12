@@ -161,6 +161,20 @@ nav.cats{
   padding:12px 20px;
   border-bottom:1px solid rgba(72,87,59,0.15);
 }
+.data-error-banner{
+  background:var(--closed-bg); border-bottom:1px solid rgba(162,59,46,0.25);
+  padding:12px 20px;
+}
+.data-error-inner{
+  max-width:1100px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  color:var(--closed); font-size:13.5px; font-weight:600;
+}
+.data-error-inner button{
+  background:var(--closed); color:#fff; border:none; border-radius:8px;
+  padding:8px 16px; font-family:'Assistant',sans-serif; font-weight:700; font-size:13px; cursor:pointer; flex-shrink:0;
+}
+.data-error-inner button:hover{opacity:0.9;}
 .cats-row{
   max-width:1100px; margin:0 auto;
   display:flex; gap:10px; overflow-x:auto; padding-bottom:2px;
@@ -541,6 +555,13 @@ footer{
   <div class="cats-row" id="catsRow"></div>
 </nav>
 
+<div id="dataErrorBanner" class="data-error-banner" style="display:none;">
+  <div class="data-error-inner">
+    <span>⚠️ לא הצלחנו לטעון את נתוני האתר (data.json). ייתכן שיש בעיית רשת, או שהקובץ חסר/פגום בתחביר.</span>
+    <button id="dataRetryBtn">נסו שוב</button>
+  </div>
+</div>
+
 <main>
 
   <section class="block" id="servicesBlock">
@@ -558,12 +579,11 @@ footer{
 
 <script>
 /* =========================================================================================
-   ============================   CONFIG — כאן עורכים את כל התוכן   ========================
+   ============================   CONFIG   ==================================================
    =========================================================================================
-   ימים: 0=ראשון 1=שני 2=שלישי 3=רביעי 4=חמישי 5=שישי 6=שבת
-   כל שירות מחזיק hours: מפה מיום -> מערך של חלונות זמן {start,end,label?}
-   מערך ריק [] = סגור באותו יום.
-   אפשר להוסיף כמה חלונות ביום אחד (לדוגמה חדר אוכל עם 3 ארוחות, או חדר כושר עם זמן בנים/בנות)
+   כל התוכן (שירותים, שעות, טלפונים, קו 10, נהלים וכו') חי אך ורק ב-data.json הסמוך לקובץ הזה.
+   הקבועים כאן הם רק מבנה קבוע של האתר (קטגוריות, שמות ימים) - לא תוכן לעריכה שוטפת.
+   לעריכת תוכן - ראו README.md ואת data.json עצמו (יש בו הסבר _instructions בתחילתו).
    ========================================================================================= */
 
 const DAY_NAMES = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
@@ -580,216 +600,6 @@ const CATEGORIES = [
   { id:'onboarding',  name:'קליטה',           icon:'🧭' },
 ];
 
-// עזר קצר ליצירת חלון שעות זהה לכל יום בטווח נתון
-function everyDay(start, end, days = [0,1,2,3,4]) {
-  const map = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
-  days.forEach(d => map[d] = [{ start, end }]);
-  return map;
-}
-
-const SERVICES = [
-  {
-    id: 'clinic',
-    name: 'מרפאה',
-    category: 'health',
-    icon: '⚕',
-    hours: {
-      0:[{start:'08:00',end:'16:00'}], 1:[{start:'08:00',end:'16:00'}],
-      2:[{start:'08:00',end:'16:00'}], 3:[{start:'08:00',end:'16:00'}],
-      4:[{start:'08:00',end:'16:00'}], 5:[{start:'08:00',end:'12:00'}], 6:[]
-    },
-    note: 'יש לקבוע תור דרך <a href="https://meditik.medical.idf.il/home" target="_blank" rel="noopener noreferrer" style="color: #0000ee; text-decoration: underline;">MEDITIK</a>. למקרי חירום מחוץ לשעות הפעילות — פנו למרפאה.',
-    // הוסיפו כאן קישור לסרטון הדרכה שמסביר איך מזמינים תור במדיטיק.
-    // אפשר קישור הטמעה (embed) מיוטיוב, או קובץ mp4 מקומי (לדוגמה 'meditik-guide.mp4') שיושב באותה תיקייה של קובץ ה-HTML.
-    videoUrl: 'Meditik.mp4',
-    videoCaption: 'הדרכה: איך מזמינים תור במדיטיק'
-  },
-  {
-    id: 'dental',
-    name: 'מרפאת שיניים',
-    category: 'health',
-    icon: '🦷',
-    hours: {
-      0:[{start:'08:00',end:'16:00'}], 1:[{start:'08:00',end:'16:00'}],
-      2:[{start:'08:00',end:'16:00'}], 3:[{start:'08:00',end:'16:00'}],
-      4:[{start:'08:00',end:'16:00'}], 5:[], 6:[]
-    },
-  },
-  {
-    // שעות קבלה לדוגמה - עדכנו לפי הזמינות בפועל של קצין הפסיכולוגיה
-    id: 'mental-health',
-    name: 'בריאות הנפש',
-    category: 'health',
-    icon: '🧠',
-    hours: {
-      0:[{start:'09:00',end:'13:00'}], 1:[],
-      2:[{start:'09:00',end:'13:00'}], 3:[],
-      4:[{start:'09:00',end:'13:00'}], 5:[], 6:[]
-    },
-    note: 'קבלה אצל קצין הפסיכולוגיה - בתיאום מראש. למקרה דחוף פנו למרפאה או לתורן הבסיס.'
-  },
-  {
-    id: 'gym',
-    name: 'חדר כושר',
-    category: 'sport',
-    icon: '🏋',
-    // דוגמה לפיצול בנים/בנות: פשוט הוסיפו label לחלון. כדי לחזור לשעות אחידות לכולם -
-    // מחקו את שני החלונות הראשונים והשאירו חלון יחיד בלי label לאורך כל שעות הפתיחה.
-    hours: {
-      0:[{start:'06:00',end:'08:00',label:'בנים'},{start:'08:00',end:'10:00',label:'בנות'},{start:'10:00',end:'22:00',label:'פתוח לכולם'}],
-      1:[{start:'06:00',end:'08:00',label:'בנים'},{start:'08:00',end:'10:00',label:'בנות'},{start:'10:00',end:'22:00',label:'פתוח לכולם'}],
-      2:[{start:'06:00',end:'08:00',label:'בנים'},{start:'08:00',end:'10:00',label:'בנות'},{start:'10:00',end:'22:00',label:'פתוח לכולם'}],
-      3:[{start:'06:00',end:'08:00',label:'בנים'},{start:'08:00',end:'10:00',label:'בנות'},{start:'10:00',end:'22:00',label:'פתוח לכולם'}],
-      4:[{start:'06:00',end:'08:00',label:'בנים'},{start:'08:00',end:'10:00',label:'בנות'},{start:'10:00',end:'22:00',label:'פתוח לכולם'}],
-      5:[{start:'07:00',end:'13:00',label:'פתוח לכולם'}],
-      6:[{start:'09:00',end:'12:00',label:'פתוח לכולם'}]
-    },
-    // קישור לקבוצת הווטסאפ של חדר הכושר לעדכונים - עדכנו לקישור האמיתי
-    waGroupUrl: 'https://chat.whatsapp.com/BBECUEVZE2IH4nAgsOTg7z',
-    waGroupLabel: 'הצטרפו לקבוצת חדר הכושר והחוגים לעדכונים'
-  },
-  {
-    id: 'mess-hall',
-    name: 'חדר אוכל',
-    category: 'food',
-    icon: '🍽',
-    hours: {
-      0:[{start:'06:30',end:'08:30',label:'בוקר'},{start:'12:00',end:'14:00',label:'צהריים'},{start:'18:00',end:'20:00',label:'ערב'}],
-      1:[{start:'06:30',end:'08:30',label:'בוקר'},{start:'12:00',end:'14:00',label:'צהריים'},{start:'18:00',end:'20:00',label:'ערב'}],
-      2:[{start:'06:30',end:'08:30',label:'בוקר'},{start:'12:00',end:'14:00',label:'צהריים'},{start:'18:00',end:'20:00',label:'ערב'}],
-      3:[{start:'06:30',end:'08:30',label:'בוקר'},{start:'12:00',end:'14:00',label:'צהריים'},{start:'18:00',end:'20:00',label:'ערב'}],
-      4:[{start:'06:30',end:'08:30',label:'בוקר'},{start:'12:00',end:'14:00',label:'צהריים'},{start:'18:00',end:'20:00',label:'ערב'}],
-      5:[{start:'07:00',end:'09:00',label:'בוקר'},{start:'12:30',end:'14:00',label:'צהריים חג'}],
-      6:[{start:'08:00',end:'09:30',label:'בוקר'},{start:'12:30',end:'14:00',label:'צהריים'}]
-    }
-  },
-  {
-    id: 'meat-kitchen',
-    name: 'בשרייה',
-    category: 'food',
-    icon: '🥩',
-    hours: {
-      0:[{start:'11:30',end:'14:00'},{start:'17:30',end:'19:30'}],
-      1:[{start:'11:30',end:'14:00'},{start:'17:30',end:'19:30'}],
-      2:[{start:'11:30',end:'14:00'},{start:'17:30',end:'19:30'}],
-      3:[{start:'11:30',end:'14:00'},{start:'17:30',end:'19:30'}],
-      4:[{start:'11:30',end:'14:00'},{start:'17:30',end:'19:30'}],
-      5:[{start:'12:00',end:'14:00'}], 6:[]
-    }
-  },
-  {
-    id: 'dairy-kitchen',
-    name: 'חלבייה',
-    category: 'food',
-    icon: '🧀',
-    hours: {
-      0:[{start:'06:30',end:'08:30'},{start:'16:00',end:'18:00'}],
-      1:[{start:'06:30',end:'08:30'},{start:'16:00',end:'18:00'}],
-      2:[{start:'06:30',end:'08:30'},{start:'16:00',end:'18:00'}],
-      3:[{start:'06:30',end:'08:30'},{start:'16:00',end:'18:00'}],
-      4:[{start:'06:30',end:'08:30'},{start:'16:00',end:'18:00'}],
-      5:[{start:'07:00',end:'09:00'}], 6:[{start:'08:00',end:'09:30'}]
-    }
-  },
-  {
-    id: 'shekem',
-    name: 'שק"ם',
-    category: 'food', 
-    icon: '🛒',
-    hours: {
-      0:[{start:'08:00',end:'20:00'}], 1:[{start:'08:00',end:'20:00'}],
-      2:[{start:'08:00',end:'20:00'}], 3:[{start:'08:00',end:'20:00'}],
-      4:[{start:'08:00',end:'20:00'}], 5:[{start:'08:00',end:'14:00'}],
-      6:[{start:'10:00',end:'14:00'}]
-    }
-  },
-  {
-    id: 'pool',
-    name: 'בריכה',
-    category: 'sport',
-    icon: '🏊',
-    hours: {
-      0:[{start:'16:00',end:'19:00'}], 1:[{start:'16:00',end:'19:00'}],
-      2:[{start:'16:00',end:'19:00'}], 3:[{start:'16:00',end:'19:00'}],
-      4:[{start:'16:00',end:'19:00'}], 5:[{start:'10:00',end:'13:00'}], 6:[]
-    },
-    note: 'התעדכנו מול מפקדים האם הבריכה פתוחה בעונה הנוכחית'
-  },
-  {
-    // דף מידע חדש - עדכנו שעות אמיתיות בהתאם ליחידה
-    id: 'quartermaster',
-    name: 'אפסנאות',
-    category: 'logistics',
-    icon: '🧰',
-    hours: {
-      0:[{start:'09:00',end:'12:30'},{start:'15:00',end:'17:00'}],
-      1:[{start:'09:00',end:'12:30'},{start:'15:00',end:'17:00'}],
-      2:[{start:'09:00',end:'12:30'},{start:'15:00',end:'17:00'}],
-      3:[{start:'09:00',end:'12:30'},{start:'15:00',end:'17:00'}],
-      4:[{start:'09:00',end:'12:30'},{start:'15:00',end:'17:00'}],
-      5:[{start:'09:00',end:'11:00'}], 6:[]
-    }
-  },
-  {
-    // דף מידע חדש - עדכנו שעות אמיתיות בהתאם ליחידה
-    id: 'armory',
-    name: 'נשקייה',
-    category: 'logistics',
-    icon: '🛡',
-    hours: {
-      0:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
-      1:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
-      2:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
-      3:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
-      4:[{start:'06:30',end:'08:00'},{start:'19:00',end:'20:30'}],
-      5:[{start:'07:00',end:'09:00'}], 
-      6:[{start:'18:00',end:'19:00'}]
-    },
-    videoUrl: 'WeaponForm.mp4',
-    videoCaption: 'הדרכת מילוי טופס נשק דיגיטלי באתר "בסיס חכם"'
-  },
-  {
-    // שעות לדוגמה - עדכנו לפי זמני התפילות בפועל בבית הכנסת של הבסיס
-    id: 'synagogue',
-    name: 'בית כנסת',
-    category: 'prayers',
-    icon: '🕍',
-    hours: {
-        0: "7:00 (שחרית), 12:30 (מנחה- חורף), 13:15 (מנחה- קיץ), 19:00 (ערבית- חורף), 20:00 (ערבית- קיץ)",
-        1: "7:00 (שחרית), 12:30 (מנחה- חורף), 13:15 (מנחה- קיץ), 19:00 (ערבית- חורף), 20:00 (ערבית- קיץ)",
-        2: "7:00 (שחרית), 12:30 (מנחה- חורף), 13:15 (מנחה- קיץ), 19:00 (ערבית- חורף), 20:00 (ערבית- קיץ)",
-        3: "7:00 (שחרית), 12:30 (מנחה- חורף), 13:15 (מנחה- קיץ), 19:00 (ערבית- חורף), 20:00 (ערבית- קיץ)",
-        4: "7:00 (שחרית), 12:30 (מנחה- חורף), 13:15 (מנחה- קיץ), 19:00 (ערבית- חורף), 20:00 (ערבית- קיץ)",
-        5: "7:00 (שחרית), 12:30 (מנחה- חורף), 13:15 (מנחה- קיץ), 19:00 (ערבית- חורף), 20:00 (ערבית- קיץ)",
-        6: "7:00 (שחרית), 12:30 (מנחה- חורף), 13:15 (מנחה- קיץ), 19:00 (ערבית- חורף), 20:00 (ערבית- קיץ)"
-      },
-    note: 'זמני קבלת שבת והבדלה משתנים לפי זמני כניסת/יציאת השבת בעונה — עדכנו בהתאם.'
-  },
-];
-
-/* =========================================================================================
-   קו 10 — תחבורה ציבורית בבסיס
-   כל השעות הן שעת יציאה מרחבת ההיסעים.
-   ========================================================================================= */
-const BUS_ROUTES = [
-  {
-    id: 1, name: 'מסלול 1', minuteOffset: 0,
-    stops: ['רחבת היסעים','ש"ג/בינוי','מנהלה/טירונות','מרפאה','מושל"ם','מגדל/כיבוי','תובלות','ביסמ"ת','ש"ג/בינוי','רחבת היסעים']
-  },
-  {
-    id: 2, name: 'מסלול 2', minuteOffset: 20,
-    stops: ['רחבת היסעים','תקשוב','מנהלה/טירונות','ש"ג/בינוי','רחבת היסעים']
-  },
-  {
-    id: 3, name: 'מסלול 3', minuteOffset: 40,
-    stops: ['רחבת היסעים','הגנ"א/ברוש','רחבת היסעים','ש"ג/בינוי','מנהלה/טירונות','גף רכב','רחבת היסעים']
-  },
-];
-// שעת התחלה כל יום, ושעת הסיום המלאה (א'-ד') מול שעת הסיום המקוצרת (חמישי)
-const BUS_FIRST_HOUR = 8;
-const BUS_LAST_HOUR_NORMAL = 19;   // א'-ד': יציאות עד 19:40
-const BUS_LAST_HOUR_THURSDAY = 17; // חמישי: יציאות עד 17:40 בלבד
-
 function getBusDeparturesForDay(dayIndex){
   if (dayIndex === 5 || dayIndex === 6) return []; // שישי/שבת - אין קו 10
   const lastHour = dayIndex === 4 ? LIVE_BUS_HOURS.lastHourThursday : LIVE_BUS_HOURS.lastHourNormal;
@@ -802,108 +612,9 @@ function getBusDeparturesForDay(dayIndex){
 }
 
 /* =========================================================================================
-   עלון מידע — דרכי הגעה ויציאה מהבסיס (תחבורה ציבורית, קו 392)
-   זהו בלוק תוכן חופשי שמופיע תחת קטגוריית "תחבורה", לצד קו 10 והשאטלים.
-   עדכנו את הטקסט (body - מערך פסקאות), את קישור הסרטון (videoUrl) ואת קישור ההזמנה (linkUrl).
-   ========================================================================================= */
-const TRANSPORT_INFO = {
-  title: 'דרכי הגעה ויציאה מהבסיס — תחבורה ציבורית',
-  body: [
-    'ניתן לצאת מהבסיס ולהגיע אליו באמצעות קו 392 של אגד. מומלץ להזמין כרטיס מראש דרך אתר אגד או האפליקציה.',
-  ],
-  // קישור הטמעה (embed) מיוטיוב, או שם קובץ mp4 מקומי (לדוגמה 'bus-392-guide.mp4') באותה תיקייה של קובץ ה-HTML. השאירו ריק אם עדיין אין סרטון.
-  videoUrl: 'EggedReserevations.mp4',
-  videoCaption: 'הדרכה: איך מזמינים כרטיס לקו 392',
-  linkLabel: 'הזמנת כרטיס באתר אגד',
-  linkUrl: 'https://reserved-seats.egged.co.il/reserved-seats-app/order'
-};
-
-/* =========================================================================================
-   שאטלים — הסעות בסיסיות מהערים לבסיס ובחזרה
-   כל שאטל מחזיק קישור לקבוצת ווטסאפ. ימי הפעילות והשעות המדויקות משתנים - עדכנו את השדה days/note בהתאם.
-   ========================================================================================= */
-const SHUTTLES = [
-  { route: 'אשדוד ← אשקלון ← שדרות ← נתיבות', days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/C87Cs6xvVCiApclabb2Euj' },
-  { route: 'ירושלים ← חמד ← לטרון ← מודיעין',  days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/DUTrgkgJqeHAiaQbrn3rHc' },
-  { route: 'באר שבע ← דימונה ← ערבה',           days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/HyByTqsmkAU3qfyIh6InE3' },
-  { route: 'תל אביב ← בת ים ← ראשון לציון ← רחובות', days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/EHyqn5dea1iLQ9KPXgqI65' },
-  { route: 'פתח תקווה ← קריית אונו',            days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/Ji5hkToZjEI0hJ5soUYee3' },
-  { route: 'כפר סבא ← הרצליה',                  days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/GF91ArrBuJOITp2GWUmeqg' },
-  { route: 'נתניה ← חדרה ← חיפה',               days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/CKkAo84AvbK62KvT1gFJG3' },
-  { route: 'אילת',                              days: 'ראשון, חמישי', whatsapp: 'https://chat.whatsapp.com/Dvb8A1eJFwK0bawrqPdLo9' },
-];
-// קישורים להתחברות לאפליקציית השאטל - עדכנו לקישורים האמיתיים מהחנויות
-const SHUTTLE_APP_STORE_URL = 'https://apps.apple.com/il/app/שאט-ל-היסעים-צה-ל/id1504198076';   // App Store (אייפון)
-const SHUTTLE_GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.shift.idf&pcampaignid=web_share'; // Google Play (אנדרואיד)
-
-/* =========================================================================================
-   דגשים ונהלים — רובריקת תוכן חופשי, מחולקת לנושאים מתקפלים
-   כל נושא הוא כותרת + רשימת נקודות. הוסיפו/ערכו סעיפים ונושאים חדשים לפי הצורך.
-   ========================================================================================= */
-const GUIDELINES = [
-  {
-    title: 'אבטחת מידע',
-    points: [
-      'אין להכניס טלפונים ניידים או מצלמות לאזורים מוגבלים המסומנים בשילוט.',
-      'כל מסמך המסומן כרגיש יש לאחסן בכספת/ארון נעול בלבד.',
-      'דווחו מיידית על כל אירוע חשוד או אובדן ציוד למחלקת אבטחת מידע.',
-    ]
-  },
-  {
-    title: 'בטיחות',
-    points: [
-      'חובת חגורת בטיחות/ציוד מגן בהתאם לאזור העבודה.',
-      'שמרו על נתיבי מילוט פנויים בכל עת.',
-      'כל תקלה או מפגע בטיחותי יש לדווח מיידית לממונה בטיחות.',
-      'עליכם לציית להוראות של רמזורי ומחסומי הטיסה בכבישים המנהלתיים!, בכל מקרה חצייה של מחסום תתבצע לאחר סריקה של האזור',
-      'כל עבודה על/בקרבת המסלולים מחייבת מעבר תדריך ייעודי/ הסמכת מסלולים ע"י המגדל'
-    ]
-  },
-  {
-    title: 'ספיגה',
-    points: [
-      'בעת התרעה יש לפעול לפי נוהל ספיגה המקומי ולהגיע למרחב המוגן הקרוב ביותר.',
-      'יש להכיר מראש את מיקום המרחבים המוגנים באזור המגורים והעבודה שלכם.',
-      'עדכנו סעיף זה בהתאם לנהלים הרשמיים והעדכניים של הבסיס.',
-    ]
-  },
-];
-
-/* =========================================================================================
-   תהליך קליטה — עדכנו את שמות התחנות והתיאורים בהתאם לבסיס שלכם
-   ========================================================================================= */
-const ABSORPTION_STEPS = [
-  { title: 'דרכי הגעה', desc: 'הגעה באמצעות שאטלים/ הגעה למרכזית ב"ש/אילת ומשם קו 392 לעובדה' },
-  { title: 'ביצוע לומדות', desc: 'לומדות: רפואה, ת"ש, יוהל"ם, אבטחת מידע, חינוך. בקרו ב<a href="https://www.home.idf.il/" target="_blank" rel="noopener noreferrer" style="color: #0000ee; text-decoration: underline;">אתר צה"ל</a>' },
-  { title: 'שיבוץ ליחידה ולחדר', desc: 'קבלת שיבוץ סופי ליחידה, לצוות ולחדר המגורים.' },
-  { title: 'בדיקות רפואיות ראשוניות', desc: 'סבב קצר במרפאה — בדיקת התאמה ופתיחת כרטיס רפואי.' },
-  { title: 'ראיון אישי', desc: 'ראיון עם המפקדים ביחידה' },
-  { title: 'פתיחת כרטיס מגנטי והתחלת שגרה', desc: 'קבלת אמצעי כניסה, כרטיס לחדר אוכל ותחילת פעילות שוטפת.' },
-];
-
-/* =========================================================================================
-   טלפונים חשובים — עדכנו שמות ומספרים אמיתיים
-   ========================================================================================= */
-const PHONES = [
-  { name: 'מושל"ם',          role: '24/7 ,מרכז שליטה בסיסי', number: '08635-9900' },
-  { name: 'מרפאה',    role: 'עזרה ראשונה, מקרים רפואיים', number: '08635-9999' },
-  { name: 'אבטחת מידע',           role: 'בקרה וקבלת כניסה',       number: '08635-9695' },
-  { name: 'חמ"ל הגנ"ק',        role: 'מקרי חירום, דיווח על אירועים, 24/7',  number: '08635-9904' },
-  { name: 'בינוי',               role: 'תשתיות, והנדסה',       number: '08635-9963' },
-  { name: 'מנהלה',               role: 'שירותי טייסת מנהלה, 24/7',       number: '08635-9953' },
-  { name: 'מגדל',               role: 'שירותי מסלולים, דיווח על שריפות בזמ"א, 24/7',       number: '08635-9966' },
-  { name: 'תקשוב',               role: 'טיפול בתקלות',       number: '08635-9976' },
-];
-
-/* =========================================================================================
-   ============================   סוף בלוק ה-CONFIG   ======================================
-   ========================================================================================= */
-
-/* =========================================================================================
-   שכבת נתונים חיה - האתר קורא את התוכן העדכני מ-data.json בכל טעינת עמוד.
-   כל הערכים הקבועים למעלה (SERVICES / PHONES / BUS_ROUTES / GUIDELINES וכו') הם רק "רשת ביטחון" -
-   ברירת מחדל שתוצג אם מסיבה כלשהי data.json לא זמין (למשל בדיקה מקומית של הקובץ בלי שרת,
-   או אם הקובץ עדיין לא קיים בריפו). ברגע ש-data.json קיים - הוא זה שקובע את מה שמוצג בפועל.
+   שכבת נתונים חיה - האתר קורא את כל התוכן מ-data.json בכל טעינת עמוד. זהו מקור האמת היחיד.
+   אם data.json לא נטען בהצלחה (רשת, קובץ חסר, שגיאת תחביר) - מוצגת הודעה ידידותית במקום
+   מסך ריק או תוכן ישן/כפול.
    ========================================================================================= */
 let LIVE_SERVICES = [];
 let LIVE_PHONES = [];
@@ -914,13 +625,12 @@ let LIVE_SHUTTLES = [];
 let LIVE_SHUTTLE_APPS = {};
 let LIVE_GUIDELINES = [];
 let LIVE_ABSORPTION_STEPS = [];
+let DATA_LOAD_FAILED = false;
 
 async function loadRemoteData(){
-  try {
-    const res = await fetch('data.json', { cache: 'no-store' });
-    if (res.ok) return await res.json();
-  } catch(e){ /* אין data.json או שאין רשת - נשארים עם ברירת המחדל הקבועה למעלה */ }
-  return null;
+  const res = await fetch('data.json', { cache: 'no-store' }); // זורק שגיאה אם אין רשת - נתפס למעלה ב-init
+  if (!res.ok) throw new Error('data.json not found (' + res.status + ')');
+  return await res.json();
 }
 
 // ---------- פענוח פורמט קומפקטי מ-data.json ----------
@@ -956,23 +666,18 @@ function parseBusRouteFromRemote(r){
 }
 
 function rebuildLiveData(remote){
-  if (remote && remote.services){
-    LIVE_SERVICES = Object.entries(remote.services)
-      .filter(([id]) => !id.startsWith('_')) // מתעלמים מכל מפתח שמתחיל ב-_ (כמו _instructions)
-      .map(([id, s]) => parseServiceFromRemote(id, s));
-  } else {
-    LIVE_SERVICES = SERVICES.map(s=>({...s}));
-  }
-  LIVE_PHONES          = (remote && remote.phones && remote.phones.length) ? remote.phones : PHONES.map(p=>({...p}));
-  LIVE_BUS_ROUTES       = (remote && remote.busRoutes && remote.busRoutes.length) ? remote.busRoutes.map(parseBusRouteFromRemote) : BUS_ROUTES.map(r=>({...r}));
-  LIVE_BUS_HOURS         = (remote && remote.busHours) ? remote.busHours : { firstHour: BUS_FIRST_HOUR, lastHourNormal: BUS_LAST_HOUR_NORMAL, lastHourThursday: BUS_LAST_HOUR_THURSDAY };
-  LIVE_TRANSPORT_INFO    = (remote && remote.transportInfo) ? remote.transportInfo : TRANSPORT_INFO;
-  LIVE_SHUTTLES          = (remote && remote.shuttles && remote.shuttles.length) ? remote.shuttles : SHUTTLES.map(s=>({...s}));
-  LIVE_SHUTTLE_APPS      = (remote && remote.shuttleApps) ? remote.shuttleApps : { appStoreUrl: SHUTTLE_APP_STORE_URL, googlePlayUrl: SHUTTLE_GOOGLE_PLAY_URL };
-  LIVE_GUIDELINES        = (remote && remote.guidelines && remote.guidelines.length) ? remote.guidelines : GUIDELINES.map(g=>({...g}));
-  LIVE_ABSORPTION_STEPS  = (remote && remote.absorptionSteps && remote.absorptionSteps.length) ? remote.absorptionSteps : ABSORPTION_STEPS.map(s=>({...s}));
+  LIVE_SERVICES = Object.entries(remote.services || {})
+    .filter(([id]) => !id.startsWith('_')) // מתעלמים מכל מפתח שמתחיל ב-_ (כמו _instructions)
+    .map(([id, s]) => parseServiceFromRemote(id, s));
+  LIVE_PHONES         = remote.phones || [];
+  LIVE_BUS_ROUTES      = (remote.busRoutes || []).map(parseBusRouteFromRemote);
+  LIVE_BUS_HOURS        = remote.busHours || { firstHour:8, lastHourNormal:19, lastHourThursday:17 };
+  LIVE_TRANSPORT_INFO   = remote.transportInfo || { title:'', body:[], videoUrl:'', videoCaption:'', linkLabel:'', linkUrl:'' };
+  LIVE_SHUTTLES         = remote.shuttles || [];
+  LIVE_SHUTTLE_APPS     = remote.shuttleApps || { appStoreUrl:'', googlePlayUrl:'' };
+  LIVE_GUIDELINES       = remote.guidelines || [];
+  LIVE_ABSORPTION_STEPS = remote.absorptionSteps || [];
 }
-rebuildLiveData(null); // ברירת מחדל מיידית, לפני שהבקשה ל-data.json חוזרת מהשרת
 
 // ---------- עזרים כלליים ----------
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -981,7 +686,6 @@ function fmtMinutes(total){
   const h = Math.floor(total/60), m = total%60;
   return `${pad(h)}:${pad(m)}`;
 }
-
 function getStatus(service, date){
   const day = date.getDay();
   const nowMin = date.getHours()*60 + date.getMinutes();
@@ -1422,13 +1126,28 @@ document.addEventListener('click', e=>{
 });
 
 // ---------- אתחול ----------
+async function loadAndRenderData(){
+  document.getElementById('servicesGrid').innerHTML = `<div class="status-line">טוען נתונים…</div>`;
+  try {
+    const remote = await loadRemoteData();
+    rebuildLiveData(remote);
+    DATA_LOAD_FAILED = false;
+    document.getElementById('dataErrorBanner').style.display = 'none';
+    renderCats();
+    renderServices();
+  } catch(e){
+    DATA_LOAD_FAILED = true;
+    document.getElementById('dataErrorBanner').style.display = 'block';
+    document.getElementById('servicesGrid').innerHTML = '';
+    document.getElementById('catsRow').innerHTML = '';
+  }
+}
+
 function init(){
-  renderCats();
-  renderServices();
   tickClock();
   setInterval(()=>{
     tickClock();
-    renderServices(); // מרענן סטטוסים וזמני קו 10 מדי דקה
+    if (!DATA_LOAD_FAILED) renderServices(); // מרענן סטטוסים וזמני קו 10 מדי דקה - רק אם יש נתונים תקינים
   }, 30000);
 
   // פתיחת מודל הווידאו בלחיצה על כל כפתור "צפו בסרטון" (Event delegation - עובד גם עבור כרטיסים שנטענים מחדש)
@@ -1443,14 +1162,9 @@ function init(){
   document.addEventListener('keydown', e=>{
     if (e.key === 'Escape') closeVideoModal();
   });
+  document.getElementById('dataRetryBtn').addEventListener('click', loadAndRenderData);
 
-  // טוענים את data.json (המצב המפורסם בפועל) ומרעננים את התצוגה כשהוא מגיע.
-  // עד אז מוצגת ברירת המחדל הקבועה בקוד, כדי שהעמוד לא יישאר ריק בזמן ההמתנה.
-  loadRemoteData().then(remote=>{
-    rebuildLiveData(remote);
-    renderCats();
-    renderServices();
-  });
+  loadAndRenderData();
 }
 
 init();
