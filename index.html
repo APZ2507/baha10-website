@@ -1036,7 +1036,7 @@ let videoRegistryCounter = 0;
 
 function renderVideoBlock(videoUrl, caption){
   if (!videoUrl){
-    return `<div class="video-placeholder">📹 כאן יופיע סרטון הדרכה — הוסיפו קישור בשדה videoUrl בבלוק ה-CONFIG</div>`;
+    return ''
   }
   const key = `v${videoRegistryCounter++}`;
   VIDEO_REGISTRY[key] = { url: videoUrl, caption: caption || '' };
