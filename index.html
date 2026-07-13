@@ -1169,5 +1169,472 @@ function init(){
 
 init();
 </script>
+<!-- =========================================================
+     בוט תמיכה — WIDGET
+     ========================================================= -->
+<style>
+  #chatbot-fab{position:fixed;left:20px;bottom:20px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#D9603D,#E8A33D);border:none;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 8px 24px rgba(46,33,48,.35);z-index:99998;display:flex;align-items:center;justify-content:center;transition:transform .2s}
+  #chatbot-fab:hover{transform:scale(1.08)}
+  #chatbot-fab .badge{position:absolute;top:-4px;right:-4px;background:#3B2A52;color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px;font-family:'Assistant',sans-serif}
+  #chatbot-panel{position:fixed;left:20px;bottom:90px;width:360px;max-width:calc(100vw - 40px);height:540px;max-height:calc(100vh - 120px);background:#FFFAF2;border-radius:18px;box-shadow:0 20px 60px rgba(46,33,48,.35);z-index:99999;display:none;flex-direction:column;overflow:hidden;font-family:'Assistant',sans-serif;direction:rtl;border:1px solid rgba(217,96,61,.15)}
+  #chatbot-panel.open{display:flex}
+  #chatbot-header{background:linear-gradient(135deg,#3B2A52,#6B4C7A);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+  #chatbot-header .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#D9603D,#E8A33D);display:flex;align-items:center;justify-content:center;font-size:20px}
+  #chatbot-header .title{font-family:'Heebo',sans-serif;font-weight:700;font-size:15px}
+  #chatbot-header .subtitle{font-size:11px;opacity:.85}
+  #chatbot-close{margin-inline-start:auto;background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px;line-height:1}
+  #chatbot-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#FBF3E7}
+  .cb-msg{max-width:85%;padding:9px 12px;border-radius:14px;font-size:14px;line-height:1.5;word-wrap:break-word}
+  .cb-msg.bot{background:#fff;color:#2E2130;border:1px solid #EED2B8;align-self:flex-start;border-bottom-right-radius:4px}
+  .cb-msg.user{background:linear-gradient(135deg,#D9603D,#E8A33D);color:#fff;align-self:flex-end;border-bottom-left-radius:4px}
+  .cb-msg b{color:#3B2A52}
+  .cb-msg.user b{color:#fff}
+  .cb-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .cb-chip{background:#fff;color:#3B2A52;border:1px solid #E8A33D;padding:6px 10px;border-radius:20px;font-size:13px;cursor:pointer;font-family:'Assistant',sans-serif;transition:all .15s}
+  .cb-chip:hover{background:#E8A33D;color:#fff}
+  .cb-chip.back{border-color:#6B4C7A;color:#6B4C7A}
+  .cb-chip.back:hover{background:#6B4C7A;color:#fff}
+  .cb-status{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:700;margin-inline-start:6px}
+  .cb-status.open{background:#E7EEDD;color:#4C7A4A}
+  .cb-status.closed{background:#F5E1D9;color:#A23B2E}
+  #chatbot-input-wrap{padding:10px;background:#fff;border-top:1px solid #EED2B8;display:flex;gap:6px}
+  #chatbot-input{flex:1;border:1px solid #EED2B8;border-radius:20px;padding:8px 14px;font-size:14px;font-family:'Assistant',sans-serif;outline:none;background:#FBF3E7}
+  #chatbot-input:focus{border-color:#D9603D;background:#fff}
+  #chatbot-send{background:linear-gradient(135deg,#D9603D,#E8A33D);color:#fff;border:none;border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:18px;flex-shrink:0}
+  #chatbot-send:hover{opacity:.9}
+  #chatbot-messages::-webkit-scrollbar{width:6px}
+  #chatbot-messages::-webkit-scrollbar-thumb{background:#EED2B8;border-radius:3px}
+</style>
+
+<button id="chatbot-fab" aria-label="פתח בוט תמיכה" title="שאלו את הבוט">
+  💬<span class="badge">?</span>
+</button>
+
+<div id="chatbot-panel" role="dialog" aria-label="בוט תמיכה">
+  <div id="chatbot-header">
+    <div class="avatar">🤖</div>
+    <div>
+      <div class="title">עוזר חא"10</div>
+      <div class="subtitle">שעות, שאטלים, טלפונים ועוד</div>
+    </div>
+    <button id="chatbot-close" aria-label="סגור">×</button>
+  </div>
+  <div id="chatbot-messages" aria-live="polite"></div>
+  <div id="chatbot-input-wrap">
+    <input id="chatbot-input" type="text" placeholder="שאלו שאלה... (למשל: השקם פתוח?)" autocomplete="off">
+    <button id="chatbot-send" aria-label="שלח">➤</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const CATEGORIES = {
+    health:{label:'בריאות',icon:'⚕'},
+    food:{label:'אוכל',icon:'🍽'},
+    logistics:{label:'לוגיסטיקה',icon:'🧰'},
+    sport:{label:'ספורט',icon:'🏋'},
+    prayers:{label:'תפילות',icon:'🕍'},
+    transport:{label:'תחבורה',icon:'🚌'}
+  };
+  const DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+
+  let DATA = null;
+  const fab = document.getElementById('chatbot-fab');
+  const panel = document.getElementById('chatbot-panel');
+  const closeBtn = document.getElementById('chatbot-close');
+  const msgs = document.getElementById('chatbot-messages');
+  const input = document.getElementById('chatbot-input');
+  const sendBtn = document.getElementById('chatbot-send');
+
+  async function loadData(){
+    try{
+      const res = await fetch('data.json?_=' + Date.now());
+      DATA = await res.json();
+    }catch(e){ console.error('Bot: data load failed',e); }
+  }
+
+  function addMsg(html, who){
+    const d = document.createElement('div');
+    d.className = 'cb-msg ' + (who || 'bot');
+    d.innerHTML = html;
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+    return d;
+  }
+  function addChips(items){
+    const wrap = document.createElement('div');
+    wrap.className = 'cb-chips';
+    items.forEach(it=>{
+      const b = document.createElement('button');
+      b.className = 'cb-chip' + (it.back?' back':'');
+      b.textContent = it.label;
+      b.onclick = ()=>{ it.action(); };
+      wrap.appendChild(b);
+    });
+    msgs.appendChild(wrap);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  /* ---------- Hours parsing ---------- */
+  function parseRanges(str){
+    if(!str||!str.trim()) return [];
+    return str.split(',').map(s=>s.trim()).filter(Boolean).map(seg=>{
+      const label = (seg.match(/\(([^)]+)\)/)||[])[1] || '';
+      const clean = seg.replace(/\([^)]*\)/,'').trim();
+      const m = clean.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+      if(!m) return null;
+      return {startMin:+m[1]*60+ +m[2], endMin:+m[3]*60+ +m[4], text:clean, label};
+    }).filter(Boolean);
+  }
+  function isOpenNow(hoursObj){
+    const now = new Date();
+    const day = now.getDay();
+    const minutes = now.getHours()*60 + now.getMinutes();
+    const ranges = parseRanges(hoursObj[day]||'');
+    return ranges.some(r=>minutes>=r.startMin && minutes<r.endMin);
+  }
+  function fmtHours(hoursObj){
+    return DAYS.map((d,i)=>{
+      const raw = hoursObj[i]||'';
+      return `<div style="display:flex;gap:8px;padding:2px 0"><span style="min-width:52px;font-weight:600;color:#6B4C7A">${d}:</span><span>${raw||'סגור'}</span></div>`;
+    }).join('');
+  }
+
+  /* ---------- Views ---------- */
+  function greet(){
+    msgs.innerHTML = '';
+    addMsg('שלום! 👋 אני בוט 10. במה אפשר לעזור?');
+    addChips([
+      {label:'📋 קטגוריות ושעות',action:showCategories},
+      {label:'🚌 קו 10 (הסעות פנימיות)',action:showBusMenu},
+      {label:'📞 טלפונים',action:showPhones},
+      {label:'🚐 שאטלים לערים',action:showShuttles},
+      {label:'📑 נהלים ודגשים',action:showGuidelinesMenu},
+      {label:'ℹ️ דוגמאות שאלות',action:showExamples}
+    ]);
+  }
+  function showExamples(){
+    addMsg('נסו לשאול לדוגמה:<br>• "השקם פתוח?"<br>• "שעות של המרפאה"<br>• "אני צריך להגיע למגדל ב-19:00"<br>• "טלפון למושלם"<br>• "שאטל מירושלים"<br>• "מה הנוהל לצילום בבסיס?"<br>• "מה עושים בהתרעה?"');
+  }
+  function showGuidelinesMenu(){
+    const g = (DATA.guidelines||[]);
+    if(!g.length){ addMsg('אין נהלים זמינים.'); return; }
+    addMsg('<b>📑 נהלים ודגשים</b><br>בחרו נושא או שאלו שאלה חופשית (למשל: "האם מותר לצלם?"):');
+    const chips = g.map((x,i)=>({label:x.title, action:()=>showGuidelineTopic(i)}));
+    chips.push({label:'↩ חזרה',back:true,action:greet});
+    addChips(chips);
+  }
+  function showGuidelineTopic(i){
+    const x = (DATA.guidelines||[])[i]; if(!x) return;
+    let html = `<b>📑 ${x.title}</b><ul style="margin:6px 18px 0;padding:0;font-size:13px">${x.points.map(p=>`<li style="padding:3px 0">${p}</li>`).join('')}</ul>`;
+    addMsg(html);
+    addChips([
+      {label:'↩ לנהלים',back:true,action:showGuidelinesMenu},
+      {label:'🏠 תפריט ראשי',back:true,action:greet}
+    ]);
+  }
+  function showCategories(){
+    addMsg('בחרו קטגוריה:');
+    const chips = Object.keys(CATEGORIES).map(k=>({
+      label: CATEGORIES[k].icon+' '+CATEGORIES[k].label,
+      action: ()=>showCategory(k)
+    }));
+    chips.push({label:'↩ חזרה',back:true,action:greet});
+    addChips(chips);
+  }
+  function showCategory(cat){
+    const svcs = Object.entries(DATA.services).filter(([,s])=>s.category===cat);
+    if(!svcs.length){ addMsg('אין שירותים בקטגוריה זו.'); return; }
+    addMsg('שירותים בקטגוריית '+CATEGORIES[cat].label+':');
+    const chips = svcs.map(([k,s])=>({
+      label: s.icon+' '+s.name+(isOpenNow(s.hours)?' 🟢':' 🔴'),
+      action: ()=>showService(k)
+    }));
+    chips.push({label:'↩ לקטגוריות',back:true,action:showCategories});
+    addChips(chips);
+  }
+  function showService(key){
+    const s = DATA.services[key]; if(!s) return;
+    const open = isOpenNow(s.hours);
+    const today = DAYS[new Date().getDay()];
+    const todayHours = s.hours[new Date().getDay()] || 'סגור';
+    let html = `<b>${s.icon} ${s.name}</b> <span class="cb-status ${open?'open':'closed'}">${open?'פתוח כעת':'סגור כעת'}</span>`;
+    html += `<div style="margin-top:6px"><b>היום (${today}):</b> ${todayHours||'סגור'}</div>`;
+    html += `<div style="margin-top:8px;padding-top:6px;border-top:1px dashed #EED2B8"><b>שעות שבועיות:</b><div style="font-size:13px;margin-top:4px">${fmtHours(s.hours)}</div></div>`;
+    if(s.note) html += `<div style="margin-top:8px;padding:6px 8px;background:#FBF3E7;border-radius:8px;font-size:13px">${s.note}</div>`;
+    addMsg(html);
+    addChips([
+      {label:'↩ לקטגוריה',back:true,action:()=>showCategory(s.category)},
+      {label:'🏠 תפריט ראשי',back:true,action:greet}
+    ]);
+  }
+  function showPhones(){
+    let html = '<b>📞 טלפונים חשובים:</b><div style="margin-top:6px;font-size:13px">';
+    DATA.phones.forEach(p=>{
+      html += `<div style="padding:4px 0;border-bottom:1px dashed #EED2B8"><b>${p.name}</b> — ${p.role}<br><a href="tel:${p.number.replace(/[^0-9]/g,'')}" style="color:#D9603D;font-weight:700">${p.number}</a></div>`;
+    });
+    html += '</div>';
+    addMsg(html);
+    addChips([{label:'↩ חזרה',back:true,action:greet}]);
+  }
+  function showShuttles(){
+    let html = '<b>🚐 שאטלים לבסיס:</b><div style="margin-top:6px;font-size:13px">';
+    DATA.shuttles.forEach(s=>{
+      html += `<div style="padding:4px 0;border-bottom:1px dashed #EED2B8"><b>${s.route}</b><br><span style="color:#6B4C7A">${s.days}</span> — <a href="${s.whatsapp}" target="_blank" style="color:#D9603D">קבוצת וואטסאפ</a></div>`;
+    });
+    html += '</div>';
+    addMsg(html);
+    addChips([{label:'↩ חזרה',back:true,action:greet}]);
+  }
+  function showBusMenu(){
+    addMsg('<b>🚌 קו 10 — הסעות פנימיות</b><br>המסלולים יוצאים מרחבת ההיסעים בכל שעה עגולה בדקות שונות:');
+    let html = '<div style="font-size:13px">';
+    DATA.busRoutes.forEach(r=>{
+      html += `<div style="padding:6px 0;border-bottom:1px dashed #EED2B8"><b>${r.name}</b> — יוצא בכל שעה בדקה ${String(r.minuteOffset).padStart(2,'0')}<br><span style="color:#6B4C7A;font-size:12px">${r.stops}</span></div>`;
+    });
+    const bh = DATA.busHours;
+    html += `<div style="margin-top:6px;padding:6px;background:#FBF3E7;border-radius:8px">שעות פעילות: ${bh.firstHour}:00 עד ${bh.lastHourNormal}:00 (חמישי עד ${bh.lastHourThursday}:00)</div>`;
+    html += '</div>';
+    addMsg(html);
+    addChips([
+      {label:'⏰ חשב זמן הגעה ליעד',action:askDestination},
+      {label:'↩ חזרה',back:true,action:greet}
+    ]);
+  }
+  function askDestination(){
+    addMsg('כתבו: "אני צריך להגיע ל<b>[יעד]</b> ב<b>[שעה]</b>" — למשל: <i>אני צריך להגיע למגדל ב-19:00</i>');
+  }
+
+  /* ---------- Q&A ---------- */
+  function findService(text){
+    const t = text.replace(/["']/g,'');
+    for(const [k,s] of Object.entries(DATA.services)){
+      const names = [s.name, s.name.replace(/"/g,''), k];
+      if(names.some(n=>t.includes(n))) return [k,s];
+    }
+    // aliases
+    const aliases = {'שקם':'shekem','שק"ם':'shekem','חדר אוכל':'mess-hall','מרפאה':'clinic','שיניים':'dental','כושר':'gym','אפסנאות':'quartermaster','נשקייה':'armory','נשקיה':'armory','בית כנסת':'synagogue','בשריה':'meat-kitchen','בשרייה':'meat-kitchen','חלביה':'dairy-kitchen','חלבייה':'dairy-kitchen','בריכה':'pool','פסיכולוג':'mental-health'};
+    for(const [a,k] of Object.entries(aliases)){
+      if(t.includes(a) && DATA.services[k]) return [k,DATA.services[k]];
+    }
+    return null;
+  }
+  function extractTime(text){
+    const m = text.match(/(\d{1,2}):(\d{2})/) || text.match(/ב[־\-\s]*(\d{1,2})(?![\d:])/);
+    if(!m) return null;
+    const h = +m[1]; const mm = m[2]?+m[2]:0;
+    if(h>=0&&h<=23&&mm>=0&&mm<=59) return h*60+mm;
+    return null;
+  }
+  function findBusRoutesForStop(stopText){
+    const t = stopText;
+    return DATA.busRoutes.filter(r=>{
+      return r.stops.split('←').some(s=>s.trim().includes(t));
+    }).map(r=>{
+      const stops = r.stops.split('←').map(s=>s.trim());
+      const idx = stops.findIndex(s=>s.includes(t));
+      return {route:r, stopIndex:idx, totalStops:stops.length, stopName:stops[idx]};
+    });
+  }
+  function answerBusQuestion(text){
+    // detect destination keywords
+    const destKeywords = ['מגדל','מרפאה','מושל"ם','מושלם','ש"ג','בינוי','מנהלה','טירונות','תובלות','ביסמ"ת','ביסמת','תקשוב','הגנ"א','ברוש','גף רכב','כיבוי'];
+    let dest = null;
+    for(const k of destKeywords){ if(text.includes(k.replace(/"/g,''))||text.includes(k)){ dest = k; break; } }
+    if(!dest) return false;
+    const targetMin = extractTime(text);
+    const matches = findBusRoutesForStop(dest);
+    if(!matches.length){ addMsg('לא מצאתי מסלול פנימי שעובר ב<b>'+dest+'</b>. נסו לבדוק בתפריט קו 10.'); return true; }
+
+    // estimated travel: ~2 min per stop from רחבת היסעים
+    let html = `<b>🚌 יעד: ${dest}</b>`;
+    if(targetMin!=null){
+      const th = Math.floor(targetMin/60), tm = targetMin%60;
+      html += `<br>יעד הגעה: ${String(th).padStart(2,'0')}:${String(tm).padStart(2,'0')}<br><br>`;
+      matches.forEach(m=>{
+        const travel = m.stopIndex * 2; // approx 2 דקות לתחנה
+        // find latest hour where hour*60 + offset + travel <= target
+        const bh = DATA.busHours;
+        const lastHour = new Date().getDay()===4 ? bh.lastHourThursday : bh.lastHourNormal;
+        let bestHour = null;
+        for(let h=bh.firstHour; h<=lastHour; h++){
+          const depart = h*60 + m.route.minuteOffset;
+          const arrive = depart + travel;
+          if(arrive <= targetMin) bestHour = h;
+        }
+        html += `<div style="padding:6px 0;border-bottom:1px dashed #EED2B8"><b>${m.route.name}</b> (דקה ${String(m.route.minuteOffset).padStart(2,'0')})<br>`;
+        if(bestHour!=null){
+          const dep = bestHour*60 + m.route.minuteOffset;
+          const arr = dep + travel;
+          html += `להתייצב ברחבת ההיסעים לא יאוחר מ-<b style="color:#D9603D">${String(bestHour).padStart(2,'0')}:${String(m.route.minuteOffset).padStart(2,'0')}</b><br><span style="font-size:12px;color:#6B4C7A">הגעה משוערת ל${dest}: ${String(Math.floor(arr/60)).padStart(2,'0')}:${String(arr%60).padStart(2,'0')} (~${travel} דק' נסיעה)</span>`;
+        } else {
+          html += `<span style="color:#A23B2E">אין נסיעה מתאימה בשעות הפעילות</span>`;
+        }
+        html += '</div>';
+      });
+      html += `<div style="margin-top:6px;font-size:12px;color:#6E5B60">* זמן הנסיעה מוערך (~2 דק' לתחנה). מומלץ להגיע 5 דק' מוקדם.</div>`;
+    } else {
+      html += `<br>מסלולים שעוברים ב${dest}:<br>`;
+      matches.forEach(m=>{
+        html += `<div style="padding:4px 0">• <b>${m.route.name}</b> — יוצא בכל שעה בדקה ${String(m.route.minuteOffset).padStart(2,'0')}, מגיע כתחנה ${m.stopIndex+1} מתוך ${m.totalStops}</div>`;
+      });
+      html += '<br>ציינו שעת יעד כדי לחשב מתי להתייצב.';
+    }
+    addMsg(html);
+    return true;
+  }
+  function answerPhone(text){
+    if(!/טלפון|מספר|התקשר/.test(text)) return false;
+    const results = DATA.phones.filter(p=>text.includes(p.name.replace(/"/g,''))||text.includes(p.name));
+    const list = results.length?results:DATA.phones.filter(p=>text.split(/\s+/).some(w=>w.length>2&&p.name.includes(w)));
+    if(!list.length){ showPhones(); return true; }
+    let html = '<b>📞 מצאתי:</b><div style="margin-top:4px;font-size:13px">';
+    list.forEach(p=>{ html+=`<div style="padding:4px 0"><b>${p.name}</b> — ${p.role}<br><a href="tel:${p.number.replace(/[^0-9]/g,'')}" style="color:#D9603D;font-weight:700">${p.number}</a></div>`;});
+    html += '</div>';
+    addMsg(html);
+    return true;
+  }
+  // Extract every city token that appears in the shuttle routes (split by ← and cleanup)
+  function shuttleCities(){
+    const set = new Set();
+    (DATA.shuttles||[]).forEach(s=>{
+      s.route.split(/[←,\/]|->/).forEach(part=>{
+        const c = part.trim();
+        if(c.length>=2) set.add(c);
+      });
+    });
+    return [...set];
+  }
+  const DAY_WORDS = {
+    'ראשון':'ראשון','שני':'שני','שלישי':'שלישי','רביעי':'רביעי',
+    'חמישי':'חמישי','שישי':'שישי','שבת':'שבת'
+  };
+  function answerShuttle(text){
+    const hasKeyword = /שאטל|הסעה|הסעות|הביתה|בייתה|לבית|גר ב|גרה ב|איך.*(בייתה|הביתה|לבית|לצאת|מגיע)/.test(text);
+    const cities = shuttleCities();
+    const matchedCities = cities.filter(c=>text.includes(c));
+    if(!hasKeyword && !matchedCities.length) return false;
+
+    const dayMatch = Object.keys(DAY_WORDS).find(d=>text.includes(d));
+    let list = DATA.shuttles;
+    if(matchedCities.length) list = list.filter(s=>matchedCities.some(c=>s.route.includes(c)));
+    if(dayMatch) list = list.filter(s=>s.days.includes(dayMatch)) ;
+
+    if(!list.length){
+      let msg = '<b>🚐 שאטלים</b><br><span style="color:#A23B2E">לא מצאתי שאטל מתאים';
+      if(matchedCities.length) msg += ` ל${matchedCities.join('/')}`;
+      if(dayMatch) msg += ` ביום ${dayMatch}`;
+      msg += '</span><br><span style="font-size:12px;color:#6B4C7A">השאטלים פעילים בימי ראשון וחמישי בלבד. חלופה: קו 392 מהבסיס.</span>';
+      addMsg(msg);
+      return true;
+    }
+
+    let html = '<b>🚐 שאטלים';
+    if(matchedCities.length) html += ` ל${matchedCities.join('/')}`;
+    if(dayMatch) html += ` — יום ${dayMatch}`;
+    html += ':</b><div style="margin-top:4px;font-size:13px">';
+    list.forEach(s=>{ html+=`<div style="padding:6px 0;border-bottom:1px dashed #EED2B8"><b>${s.route}</b><br>ימים: ${s.days}<br><a href="${s.whatsapp}" target="_blank" style="color:#D9603D;font-weight:700">הצטרפו לקבוצת הוואטסאפ ←</a></div>`;});
+    html += '</div>';
+    if(DATA.shuttleApps){
+      html += `<div style="margin-top:6px;font-size:12px;color:#6B4C7A">להזמנת מקום השתמשו באפליקציית "שאט-ל": <a href="${DATA.shuttleApps.googlePlayUrl}" target="_blank" style="color:#D9603D">Android</a> · <a href="${DATA.shuttleApps.appStoreUrl}" target="_blank" style="color:#D9603D">iPhone</a></div>`;
+    }
+    addMsg(html);
+    return true;
+  }
+  function answerTransport392(text){
+    if(!/392|אגד|תחבורה ציבורית|אוטובוס ציבורי/.test(text)) return false;
+    const t = DATA.transportInfo; if(!t) return false;
+    let html = `<b>🚌 ${t.title}</b><div style="margin-top:4px;font-size:13px">${(t.body||[]).join('<br>')}</div>`;
+    if(t.linkUrl) html += `<div style="margin-top:6px"><a href="${t.linkUrl}" target="_blank" style="color:#D9603D;font-weight:700">${t.linkLabel||'הזמנת כרטיס'} ←</a></div>`;
+    addMsg(html);
+    return true;
+  }
+  function answerGuidelines(text){
+    const g = DATA.guidelines||[]; if(!g.length) return false;
+    const TRIGGERS = /נוהל|נהלי|נהלים|הנחיה|הנחיות|דגש|דגשים|בטיחות|אבטחת מידע|אבטחה|ספיגה|התרעה|אזעקה|צילום|לצלם|מותר|אסור|מרחב מוגן|ממ"?ד|ממ"?ק|חגור|חגורה|נשק|מסלול|מסלולים|מפגע|תקלה|מסמך|רגיש|כספת|רמזור|מחסום|מגדל.*מסלול|טיסה/;
+    // stopwords to ignore when scoring
+    const STOP = new Set(['של','על','את','לא','כן','זה','זאת','אני','אתה','אתם','מה','איך','מתי','למה','כמה','יש','אין','גם','אם','או','כי','עם','ללא','אפשר','צריך','חייב','חובה','בבסיס','בסיס']);
+    const words = text.replace(/[.,?!"'()]/g,' ').split(/\s+/).filter(w=>w.length>2 && !STOP.has(w));
+    const scored = g.map(x=>{
+      let score = 0;
+      if(text.includes(x.title)) score += 5;
+      for(const w of words){
+        if(x.title.includes(w)) score += 3;
+        for(const p of x.points){ if(p.includes(w)) score += 1; }
+      }
+      return {x, score};
+    });
+    const hasTrigger = TRIGGERS.test(text);
+    const best = scored.filter(s=>s.score>0).sort((a,b)=>b.score-a.score);
+    if(!hasTrigger && !best.length) return false;
+    const list = best.length ? best.slice(0,2).map(s=>s.x) : g;
+    let html = '<b>📑 דגשים ונהלים:</b>';
+    list.forEach(x=>{
+      html += `<div style="margin-top:8px"><b>${x.title}</b><ul style="margin:4px 18px 0;padding:0;font-size:13px">${x.points.map(p=>`<li style="padding:2px 0">${p}</li>`).join('')}</ul></div>`;
+    });
+    if(best.length && best.length < g.length){
+      html += `<div style="margin-top:8px;font-size:12px;color:#6B4C7A">רוצים לראות את כל הנהלים? הקלידו "נהלים" או בחרו מהתפריט.</div>`;
+    }
+    addMsg(html);
+    return true;
+  }
+  function processQuestion(q){
+    const text = q.trim();
+    if(!text) return;
+    addMsg(text,'user');
+    if(!DATA){ addMsg('רגע, טוען נתונים...'); return; }
+
+    // greetings
+    if(/^(שלום|היי|hello|hi)/i.test(text)){ addMsg('שלום! 👋'); return greet(); }
+    if(/תפריט|עזרה|תודה/.test(text)){ return greet(); }
+
+    // shuttles (city + day + "home") — check BEFORE service lookup so "מודיעין" doesn't match a service
+    if(answerShuttle(text)) return;
+    // 392 / public transport
+    if(answerTransport392(text)) return;
+    // bus / destination
+    if(/מגדל|רחבת|היסעים|קו 10|להגיע ל|להתייצב/.test(text)){
+      if(answerBusQuestion(text)) return;
+    }
+    // phones
+    if(answerPhone(text)) return;
+    // guidelines
+    if(answerGuidelines(text)) return;
+    // service lookup
+    const svc = findService(text);
+    if(svc){
+      const [k,s] = svc;
+      if(/פתוח|שעות|מתי|עד מתי|סגור/.test(text)||true){
+        showService(k);
+        return;
+      }
+    }
+    // fallback
+    addMsg('לא הבנתי במדויק, נסו לבחור מהתפריט:');
+    addChips([
+      {label:'📋 קטגוריות',action:showCategories},
+      {label:'🚌 קו 10',action:showBusMenu},
+      {label:'📞 טלפונים',action:showPhones},
+      {label:'🚐 שאטלים',action:showShuttles}
+    ]);
+  }
+
+  /* ---------- Events ---------- */
+  fab.addEventListener('click', async ()=>{
+    panel.classList.toggle('open');
+    if(panel.classList.contains('open')){
+      if(!DATA){ await loadData(); }
+      if(!msgs.children.length) greet();
+      setTimeout(()=>input.focus(),100);
+    }
+  });
+  closeBtn.addEventListener('click',()=>panel.classList.remove('open'));
+  sendBtn.addEventListener('click',()=>{ const v=input.value; input.value=''; processQuestion(v); });
+  input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ const v=input.value; input.value=''; processQuestion(v); }});
+
+  loadData();
+})();
+</script>
+
 </body>
 </html>
