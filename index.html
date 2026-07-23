@@ -1488,39 +1488,25 @@ init();
     const matches = findBusRoutesForStop(dest);
     if(!matches.length){ addMsg('לא מצאתי מסלול פנימי שעובר ב<b>'+dest+'</b>. נסו לבדוק בתפריט קו 10.'); return true; }
 
-    // estimated travel: ~2 min per stop from רחבת היסעים
-    let html = `<b>🚌 יעד: ${dest}</b>`;
+    const bh = DATA.busHours;
+    const lastHour = new Date().getDay()===4 ? bh.lastHourThursday : bh.lastHourNormal;
+
+    let html = `<b>🚌 יעד: ${dest}</b><br>מסלולים שעוברים ב${dest}:<br><br>`;
+    matches.forEach(m=>{
+      // כל שעות היציאה הקבועות של המסלול הזה מרחבת ההיסעים (א'-ד'/ה' לפי היום)
+      const deps = [];
+      for(let h=bh.firstHour; h<=lastHour; h++){ deps.push(h*60 + m.route.minuteOffset); }
+      const depsHtml = deps.map(d=>{
+        const hh = String(Math.floor(d/60)).padStart(2,'0'), mm = String(d%60).padStart(2,'0');
+        const highlight = (targetMin!=null && d<=targetMin) ? 'font-weight:700;color:#3B2A52' : '';
+        return `<span style="display:inline-block;margin:2px 6px 2px 0;${highlight}">${hh}:${mm}</span>`;
+      }).join('');
+      html += `<div style="padding:6px 0;border-bottom:1px dashed #EED2B8"><b>${m.route.name}</b> — תחנה ${m.stopIndex+1} מתוך ${m.totalStops} במסלול<br><span style="font-size:12px;color:#6B4C7A">שעות יציאה מרחבת ההיסעים:</span><br>${depsHtml}</div>`;
+    });
     if(targetMin!=null){
-      const th = Math.floor(targetMin/60), tm = targetMin%60;
-      html += `<br>יעד הגעה: ${String(th).padStart(2,'0')}:${String(tm).padStart(2,'0')}<br><br>`;
-      matches.forEach(m=>{
-        const travel = m.stopIndex * 2; // approx 2 דקות לתחנה
-        // find latest hour where hour*60 + offset + travel <= target
-        const bh = DATA.busHours;
-        const lastHour = new Date().getDay()===4 ? bh.lastHourThursday : bh.lastHourNormal;
-        let bestHour = null;
-        for(let h=bh.firstHour; h<=lastHour; h++){
-          const depart = h*60 + m.route.minuteOffset;
-          const arrive = depart + travel;
-          if(arrive <= targetMin) bestHour = h;
-        }
-        html += `<div style="padding:6px 0;border-bottom:1px dashed #EED2B8"><b>${m.route.name}</b> (דקה ${String(m.route.minuteOffset).padStart(2,'0')})<br>`;
-        if(bestHour!=null){
-          const dep = bestHour*60 + m.route.minuteOffset;
-          const arr = dep + travel;
-          html += `להתייצב ברחבת ההיסעים לא יאוחר מ-<b style="color:#D9603D">${String(bestHour).padStart(2,'0')}:${String(m.route.minuteOffset).padStart(2,'0')}</b><br><span style="font-size:12px;color:#6B4C7A">הגעה משוערת ל${dest}: ${String(Math.floor(arr/60)).padStart(2,'0')}:${String(arr%60).padStart(2,'0')} (~${travel} דק' נסיעה)</span>`;
-        } else {
-          html += `<span style="color:#A23B2E">אין נסיעה מתאימה בשעות הפעילות</span>`;
-        }
-        html += '</div>';
-      });
-      html += `<div style="margin-top:6px;font-size:12px;color:#6E5B60">* זמן הנסיעה מוערך (~2 דק' לתחנה). מומלץ להגיע 5 דק' מוקדם.</div>`;
+      html += `<div style="margin-top:8px;font-size:12px;color:#6E5B60">* השעות המודגשות יוצאות לפני השעה שציינתם. זמן ההגעה בפועל ל${dest} משתנה בהתאם למסלול ולא ניתן להתחייב עליו — רק שעות היציאה מרחבת ההיסעים קבועות.</div>`;
     } else {
-      html += `<br>מסלולים שעוברים ב${dest}:<br>`;
-      matches.forEach(m=>{
-        html += `<div style="padding:4px 0">• <b>${m.route.name}</b> — יוצא בכל שעה בדקה ${String(m.route.minuteOffset).padStart(2,'0')}, מגיע כתחנה ${m.stopIndex+1} מתוך ${m.totalStops}</div>`;
-      });
-      html += '<br>ציינו שעת יעד כדי לחשב מתי להתייצב.';
+      html += `<div style="margin-top:8px;font-size:12px;color:#6E5B60">* השעות שלמעלה הן שעות היציאה מרחבת ההיסעים בלבד (קבועות ואמינות). ציינו שעת יעד כדי להדגיש את היציאות הרלוונטיות.</div>`;
     }
     addMsg(html);
     return true;
