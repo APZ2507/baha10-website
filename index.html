@@ -941,8 +941,8 @@ function renderPhones(){
 }
 
 function renderGuidelines(){
-  return LIVE_GUIDELINES.map((g, i) => `
-    <details class="guideline-block" ${i===0 ? 'open' : ''}>
+  return LIVE_GUIDELINES.map((g) => `
+    <details class="guideline-block">
       <summary>${g.title}</summary>
       <ul>${g.points.map(p => `<li>${p}</li>`).join('')}</ul>
     </details>
@@ -1412,12 +1412,54 @@ init();
       const names = [s.name, s.name.replace(/"/g,''), k];
       if(names.some(n=>t.includes(n))) return [k,s];
     }
-    // aliases
-    const aliases = {'שקם':'shekem','שק"ם':'shekem','חדר אוכל':'mess-hall','מרפאה':'clinic','שיניים':'dental','כושר':'gym','אפסנאות':'quartermaster','נשקייה':'armory','נשקיה':'armory','בית כנסת':'synagogue','בשריה':'meat-kitchen','בשרייה':'meat-kitchen','חלביה':'dairy-kitchen','חלבייה':'dairy-kitchen','בריכה':'pool','פסיכולוג':'mental-health'};
+    // aliases - מילים נוספות שמובילות ישירות לשירות ספציפי (חד-משמעי, לא מעורפל בין כמה שירותים)
+    const aliases = {
+      // מרפאה
+      'מרפאה':'clinic','חובש':'clinic','חובשת':'clinic','זריקה':'clinic','חיסון':'clinic','מדיטיק':'clinic','תור לרופא':'clinic',
+      // שיניים
+      'שיניים':'dental','שן':'dental','כאב שיניים':'dental','רופא שיניים':'dental','מרפאת שיניים':'dental',
+      // בריאות הנפש
+      'פסיכולוג':'mental-health','פסיכולוגית':'mental-health','בריאות הנפש':'mental-health','נפשי':'mental-health','דיכאון':'mental-health','חרדה':'mental-health','לחץ נפשי':'mental-health','קצין פסיכולוגיה':'mental-health',
+      // חדר כושר
+      'כושר':'gym','חדר כושר':'gym','אימון':'gym','להתאמן':'gym','משקולות':'gym','מכשירים':'gym',
+      // בריכה
+      'בריכה':'pool','לשחות':'pool','שחייה':'pool',
+      // חדר אוכל
+      'חדר אוכל':'mess-hall','חדר האוכל':'mess-hall','קפיטריה':'mess-hall','ארוחת בוקר':'mess-hall','ארוחת צהריים':'mess-hall','ארוחת ערב':'mess-hall',
+      // בשריה / חלביה
+      'בשריה':'meat-kitchen','בשרייה':'meat-kitchen','חלביה':'dairy-kitchen','חלבייה':'dairy-kitchen',
+      // שק"ם
+      'שקם':'shekem','שק"ם':'shekem','קיוסק':'shekem','חנות':'shekem','חטיף':'shekem','חטיפים':'shekem','קניות':'shekem',
+      // אפסנאות
+      'אפסנאות':'quartermaster','ציוד אישי':'quartermaster','מדים':'quartermaster',
+      // נשקייה
+      'נשקייה':'armory','נשקיה':'armory','נשק':'armory','טופס נשק':'armory','בסיס חכם':'armory',
+      // בית כנסת / תפילות וחגים
+      'בית כנסת':'synagogue','בית הכנסת':'synagogue','תפילה':'synagogue','תפילות':'synagogue','חג':'synagogue','חגים':'synagogue','מועד':'synagogue',
+      'שחרית':'synagogue','מנחה':'synagogue','ערבית':'synagogue','סידור':'synagogue','טלית':'synagogue','תפילין':'synagogue',
+      'כיפור':'synagogue','סוכות':'synagogue','פסח':'synagogue','שבועות':'synagogue','ראש השנה':'synagogue','קבלת שבת':'synagogue','הבדלה':'synagogue',
+    };
     for(const [a,k] of Object.entries(aliases)){
       if(t.includes(a) && DATA.services[k]) return [k,DATA.services[k]];
     }
     return null;
+  }
+
+  // מילות מפתח כלליות/מעורפלות שיכולות להתאים לכמה שירותים באותה קטגוריה - מובילות לתפריט הקטגוריה
+  const CATEGORY_KEYWORDS = {
+    health: ['בריאות','רפואה','רפואי','חולה','כואב','כאב','כאבים','פציעה','נפגעתי','תרופה','תרופות','טיפול','רופא','רופאה','אחות'],
+    food: ['אוכל','רעב','רעבה','ארוחה','ארוחות','לאכול','מזון','כשר','לסעוד'],
+    logistics: ['ציוד','לוגיסטיקה'],
+    sport: ['ספורט','פעילות גופנית']
+  };
+  function answerCategoryKeyword(text){
+    for(const [cat, words] of Object.entries(CATEGORY_KEYWORDS)){
+      if(words.some(w=>text.includes(w))){
+        showCategory(cat);
+        return true;
+      }
+    }
+    return false;
   }
   function extractTime(text){
     const m = text.match(/(\d{1,2}):(\d{2})/) || text.match(/ב[־\-\s]*(\d{1,2})(?![\d:])/);
@@ -1600,7 +1642,7 @@ init();
     if(answerPhone(text)) return;
     // guidelines
     if(answerGuidelines(text)) return;
-    // service lookup
+    // service lookup (מורחב עם אוצר מילים גדול יותר - ראו aliases בתוך findService)
     const svc = findService(text);
     if(svc){
       const [k,s] = svc;
@@ -1608,6 +1650,13 @@ init();
         showService(k);
         return;
       }
+    }
+    // מונח כללי/מעורפל שמתאים לכמה שירותים באותה קטגוריה (למשל "כואב לי" / "רעב") - מציגים תפריט קטגוריה
+    if(answerCategoryKeyword(text)) return;
+    // מונחי תחבורה כלליים בלי יעד ספציפי (כבר טופל מעל אם היה יעד/עיר מזוהים)
+    if(/תחבורה|לנסוע|נסיעה|לצאת מהבסיס|לחזור הביתה|לחזור הבייתה|אוטובוס/.test(text)){
+      showBusMenu();
+      return;
     }
     // fallback
     addMsg('לא הבנתי במדויק, נסו לבחור מהתפריט:');
