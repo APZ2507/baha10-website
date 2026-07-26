@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ממשק ניהול — בסיס עובדה</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&family=Assistant:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================
+   טוקנים עיצוביים
+   ========================================================= */
+:root{
+  --bg: #F5E6D8;
+  --bg-2: #EED2B8;
+  --panel: #FFFAF2;
+  --panel-2: #F9EADB;
+  --ink: #2E2130;
+  --ink-soft: #6E5B60;
+  --olive: #D9603D;
+  --olive-dark: #3B2A52;
+  --brass: #E8A33D;
+  --brass-light: #F3C77C;
+  --radius: 14px;
+  --shadow: 0 2px 0 rgba(46,33,48,0.07), 0 10px 24px -14px rgba(46,33,48,0.4);
+  --sunset-grad: linear-gradient(180deg, #EE9257 0%, #F5C89A 55%, #FBEFE1 100%);
+  --on-sunset-ink: #4A2E1D;
+  --on-sunset-soft: #7C5B44;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(1200px 500px at 15% -10%, #FCEBDB 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  color:var(--ink);
+  font-family:'Assistant', sans-serif;
+  min-height:100vh;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+header.site-head{
+  position:sticky; top:0; z-index:50;
+  background:var(--sunset-grad);
+  color:var(--on-sunset-ink);
+  padding:18px 20px 16px;
+  box-shadow:0 8px 20px -12px rgba(74,46,29,0.3);
+}
+.head-row{
+  max-width:1100px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand .badge{
+  width:46px; height:46px; border-radius:10px;
+  background:var(--olive-dark);
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; color:#FBEFE1; font-weight:900;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,0.25);
+}
+.brand-text h1{color:var(--on-sunset-ink); font-size:22px;}
+.brand-text .sub{font-size:12.5px; color:var(--on-sunset-soft); margin-top:2px;}
+
+.clock{
+  text-align:left; direction:ltr;
+  background:rgba(255,255,255,0.5);
+  border:1px solid rgba(74,46,29,0.15);
+  border-radius:10px;
+  padding:6px 14px;
+  min-width:150px;
+}
+.clock .time{font-size:20px; font-weight:700; font-family:'JetBrains Mono',monospace;}
+.clock .day{font-size:11.5px; color:var(--on-sunset-soft); text-align:right; direction:rtl;}
+
+/* =========================================================
+   LOGIN BOX
+   ========================================================= */
+.login-box{
+  max-width:420px;
+  margin:60px auto;
+  background:var(--panel);
+  padding:30px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  text-align:center;
+}
+.login-box h2{
+  font-family:'Heebo'; font-weight:900;
+  margin-bottom:10px;
+}
+.login-box input{
+  width:100%;
+  padding:10px;
+  border-radius:var(--radius);
+  border:1px solid #d1d5db;
+  font-size:16px;
+  margin-top:8px;
+}
+.login-error{
+  color:#A23B2E;
+  min-height:20px;
+  margin-top:8px;
+}
+.btn-primary{
+  background:var(--olive);
+  color:white;
+  border:none;
+  padding:12px 22px;
+  border-radius:var(--radius);
+  font-size:16px;
+  cursor:pointer;
+  margin-top:12px;
+}
+
+/* =========================================================
+   TABS
+   ========================================================= */
+.tabs{
+  max-width:1100px;
+  margin:20px auto;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.tab-btn{
+  padding:10px 18px;
+  background:var(--panel-2);
+  border-radius:var(--radius);
+  border:none;
+  cursor:pointer;
+  font-size:15px;
+  box-shadow:var(--shadow);
+}
+.tab-btn.active{
+  background:var(--olive);
+  color:white;
+}
+
+/* =========================================================
+   PANELS
+   ========================================================= */
+.panel{
+  max-width:1100px;
+  margin:0 auto 20px;
+  background:var(--panel);
+  padding:20px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+.panel h2{
+  font-family:'Heebo'; font-weight:900;
+  margin-top:0;
+}
+.input{
+  width:100%;
+  padding:10px;
+  border-radius:var(--radius);
+  border:1px solid #d1d5db;
+  font-size:15px;
+  margin-bottom:12px;
+}
+textarea.input{
+  min-height:70px;
+}
+
+/* =========================================================
+   SAVE BAR
+   ========================================================= */
+.save-bar{
+  position:sticky;
+  bottom:0;
+  background:var(--panel-2);
+  padding:14px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-top:2px solid var(--brass-light);
+}
+.save-status{
+  font-size:14px;
+}
+.save-status.ok{color:#4C7A4A;}
+.save-status.err{color:#A23B2E;}
+.save-btn{
+  background:var(--olive);
+  color:white;
+  border:none;
+  padding:12px 22px;
+  border-radius:var(--radius);
+  font-size:16px;
+  cursor:pointer;
+}
+
+/* =========================================================
+   HIDE SECTIONS
+   ========================================================= */
+.section{display:none;}
+.section.active{display:block;}
+</style>
+</head>
+
+<body>
+
+<header class="site-head">
+  <div class="head-row">
+    <div class="brand">
+      <div class="badge">⚙️</div>
+      <div class="brand-text">
+        <h1>ממשק ניהול — בסיס עובדה</h1>
+        <div class="sub">עריכת נתוני data.json</div>
+      </div>
+    </div>
+    <div class="clock">
+      <div class="time mono" id="clockTime">00:00</div>
+      <div class="day" id="clockDay">יום ראשון</div>
+    </div>
+  </div>
+</header>
+
+<main id="app">
+
+<!-- LOGIN SCREEN -->
+<div id="login" class="login-box">
+  <h2>כניסה למנהלים</h2>
+  <p>הכניסו את סיסמת הניהול כדי להמשיך</p>
+
+  <label>סיסמה</label>
+  <input id="passwordInput" type="password" placeholder="Ovda10!">
+
+  <div id="loginError" class="login-error"></div>
+
+  <button id="loginBtn" class="btn-primary">כניסה</button>
+</div>
+
+<!-- ADMIN SCREEN -->
+<div id="admin" style="display:none;">
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="services">שירותים</button>
+    <button class="tab-btn" data-tab="phones">טלפונים</button>
+    <button class="tab-btn" data-tab="bus">קו 10</button>
+    <button class="tab-btn" data-tab="transport">דרכי הגעה</button>
+    <button class="tab-btn" data-tab="shuttles">שאטלים</button>
+    <button class="tab-btn" data-tab="guidelines">דגשים</button>
+    <button class="tab-btn" data-tab="absorption">קליטה</button>
+  </div>
+
+  <!-- SERVICES -->
+  <section id="section-services" class="panel section active">
+    <h2>שירותים בבסיס</h2>
+
+    <label>בחר שירות</label>
+    <select id="serviceSelect" class="input"></select>
+
+    <label>שם השירות</label>
+    <input id="svcName" class="input" type="text">
+
+    <label>קטגוריה</label>
+    <select id="svcCategory" class="input">
+      <option value="health">health</option>
+      <option value="food">food</option>
+      <option value="logistics">logistics</option>
+      <option value="sport">sport</option>
+      <option value="transport">transport</option>
+      <option value="prayers">prayers</option>
+    </select>
+
+    <label>אייקון</label>
+    <input id="svcIcon" class="input" type="text">
+
+    <label>הערה</label>
+    <textarea id="svcNote" class="input"></textarea>
+
+    <label>וידאו (videoUrl)</label>
+    <input id="svcVideoUrl" class="input" type="text">
+
+    <label>כיתוב וידאו</label>
+    <input id="svcVideoCaption" class="input" type="text">
+
+    <label>קישור קבוצת ווצאפ</label>
+    <input id="svcWaGroupUrl" class="input" type="text">
+
+    <label>טקסט לקישור</label>
+    <input id="svcWaGroupLabel" class="input" type="text">
+
+    <h3>שעות פעילות</h3>
+    <label>ראשון (0)</label><input id="svcHours0" class="input" type="text">
+    <label>שני (1)</label><input id="svcHours1" class="input" type="text">
+    <label>שלישי (2)</label><input id="svcHours2" class="input" type="text">
+    <label>רביעי (3)</label><input id="svcHours3" class="input" type="text">
+    <label>חמישי (4)</label><input id="svcHours4" class="input" type="text">
+    <label>שישי (5)</label><input id="svcHours5" class="input" type="text">
+    <label>שבת (6)</label><input id="svcHours6" class="input" type="text">
+
+    <button id="addServiceBtn" class="btn-primary" style="margin-top:10px;">הוספת שירות חדש</button>
+    <button id="deleteServiceBtn" class="btn-primary" style="background:#A23B2E; margin-top:10px;">מחיקת שירות</button>
+  </section>
+    <!-- PHONES -->
+  <section id="section-phones" class="panel section">
+    <h2>טלפונים חשובים</h2>
+    <div id="phonesContainer"></div>
+    <button id="addPhoneBtn" class="btn-primary">הוספת איש קשר</button>
+  </section>
+
+  <!-- BUS -->
+  <section id="section-bus" class="panel section">
+    <h2>קו 10 — שעות ומסלולים</h2>
+
+    <label>שעה ראשונה</label>
+    <input id="busFirstHour" class="input" type="number">
+
+    <label>שעה אחרונה (רגיל)</label>
+    <input id="busLastHourNormal" class="input" type="number">
+
+    <label>שעה אחרונה (חמישי)</label>
+    <input id="busLastHourThursday" class="input" type="number">
+
+    <h3>מסלולים</h3>
+    <div id="busRoutesContainer"></div>
+    <button id="addBusRouteBtn" class="btn-primary">הוספת מסלול</button>
+  </section>
+
+  <!-- TRANSPORT -->
+  <section id="section-transport" class="panel section">
+    <h2>דרכי הגעה ויציאה</h2>
+
+    <label>כותרת</label>
+    <input id="transportTitle" class="input" type="text">
+
+    <label>טקסט גוף (שורה = פסקה)</label>
+    <textarea id="transportBody" class="input"></textarea>
+
+    <label>וידאו</label>
+    <input id="transportVideoUrl" class="input" type="text">
+
+    <label>כיתוב וידאו</label>
+    <input id="transportVideoCaption" class="input" type="text">
+
+    <label>טקסט לקישור</label>
+    <input id="transportLinkLabel" class="input" type="text">
+
+    <label>קישור</label>
+    <input id="transportLinkUrl" class="input" type="text">
+  </section>
+
+  <!-- SHUTTLES -->
+  <section id="section-shuttles" class="panel section">
+    <h2>שאטלים</h2>
+
+    <div id="shuttlesContainer"></div>
+    <button id="addShuttleBtn" class="btn-primary">הוספת שאטל</button>
+
+    <h3>אפליקציית שאטלים</h3>
+    <label>App Store</label>
+    <input id="appStoreUrl" class="input" type="text">
+
+    <label>Google Play</label>
+    <input id="googlePlayUrl" class="input" type="text">
+  </section>
+
+  <!-- GUIDELINES -->
+  <section id="section-guidelines" class="panel section">
+    <h2>דגשים ונהלים</h2>
+    <div id="guidelinesContainer"></div>
+    <button id="addGuidelineBtn" class="btn-primary">הוספת נושא</button>
+  </section>
+
+  <!-- ABSORPTION -->
+  <section id="section-absorption" class="panel section">
+    <h2>תהליך קליטה</h2>
+    <div id="absorptionContainer"></div>
+    <button id="addAbsorptionStepBtn" class="btn-primary">הוספת שלב</button>
+  </section>
+
+  <!-- SAVE BAR -->
+  <div class="save-bar">
+    <div id="saveStatus" class="save-status"></div>
+    <button id="saveBtn" class="save-btn">שמירה</button>
+  </div>
+
+</div> <!-- END ADMIN -->
+
+</main>
+
+<script>
+/* ============================
+   CLOCK
+   ============================ */
+function updateClock(){
+  const now = new Date();
+  const t = now.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"});
+  const d = now.toLocaleDateString("he-IL",{weekday:"long"});
+  document.getElementById("clockTime").textContent = t;
+  document.getElementById("clockDay").textContent = d;
+}
+setInterval(updateClock,1000);
+updateClock();
+
+/* ============================
+   LOGIN
+   ============================ */
+const PASSWORD = "Ovda10!";
+const loginEl = document.getElementById("login");
+const adminEl = document.getElementById("admin");
+const loginBtn = document.getElementById("loginBtn");
+const loginError = document.getElementById("loginError");
+
+loginBtn.onclick = () => {
+  const val = document.getElementById("passwordInput").value.trim();
+  if(val === PASSWORD){
+    loginEl.style.display = "none";
+    adminEl.style.display = "block";
+    loadData();
+  } else {
+    loginError.textContent = "סיסמה שגויה";
+  }
+};
+
+/* ============================
+   LOAD DATA.JSON
+   ============================ */
+let data = null;
+
+async function loadData(){
+  const res = await fetch("/data.json");
+  data = await res.json();
+  initUI();
+}
+
+/* ============================
+   TABS
+   ============================ */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+
+    document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
+    document.getElementById("section-"+btn.dataset.tab).classList.add("active");
+  };
+});
+
+/* ============================
+   SERVICES
+   ============================ */
+const serviceSelect = document.getElementById("serviceSelect");
+const svcName = document.getElementById("svcName");
+const svcCategory = document.getElementById("svcCategory");
+const svcIcon = document.getElementById("svcIcon");
+const svcNote = document.getElementById("svcNote");
+const svcVideoUrl = document.getElementById("svcVideoUrl");
+const svcVideoCaption = document.getElementById("svcVideoCaption");
+const svcWaGroupUrl = document.getElementById("svcWaGroupUrl");
+const svcWaGroupLabel = document.getElementById("svcWaGroupLabel");
+const svcHoursconst = [
+  document.getElementById("svcHours0"),
+  document.getElementById("svcHours1"),
+  document.getElementById("svcHours2"),
+  document.getElementById("svcHours3"),
+  document.getElementById("svcHours4"),
+  document.getElementById("svcHours5"),
+  document.getElementById("svcHours6")
+];
+
+function initServices(){
+  serviceSelect.innerHTML = "";
+  Object.keys(data.services).forEach(key=>{
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = key + " — " + data.services[key].name;
+    serviceSelect.appendChild(opt);
+  });
+
+  serviceSelect.onchange = ()=>loadService(serviceSelect.value);
+  loadService(serviceSelect.value);
+
+  document.getElementById("addServiceBtn").onclick = ()=>{
+    const id = prompt("מזהה לשירות החדש:");
+    if(!id) return;
+    data.services[id] = {
+      name:"",
+      category:"health",
+      icon:"",
+      note:"",
+      videoUrl:"",
+      videoCaption:"",
+      waGroupUrl:"",
+      waGroupLabel:"",
+      hours:{0:"",1:"",2:"",3:"",4:"",5:"",6:""}
+    };
+    initServices();
+  };
+
+  document.getElementById("deleteServiceBtn").onclick = ()=>{
+    const id = serviceSelect.value;
+    if(confirm("למחוק את השירות?")){
+      delete data.services[id];
+      initServices();
+    }
+  };
+}
+
+function loadService(id){
+  const svc = data.services[id];
+  svcName.value = svc.name;
+  svcCategory.value = svc.category;
+  svcIcon.value = svc.icon;
+  svcNote.value = svc.note;
+  svcVideoUrl.value = svc.videoUrl;
+  svcVideoCaption.value = svc.videoCaption;
+  svcWaGroupUrl.value = svc.waGroupUrl;
+  svcWaGroupLabel.value = svc.waGroupLabel;
+
+  for(let i=0;i<7;i++){
+    svcHours[i].value = svc.hours[i] || "";
+  }
+}
+
+function saveService(){
+  const id = serviceSelect.value;
+  const svc = data.services[id];
+
+  svc.name = svcName.value;
+  svc.category = svcCategory.value;
+  svc.icon = svcIcon.value;
+  svc.note = svcNote.value;
+  svc.videoUrl = svcVideoUrl.value;
+  svc.videoCaption = svcVideoCaption.value;
+  svc.waGroupUrl = svcWaGroupUrl.value;
+  svc.waGroupLabel = svcWaGroupLabel.value;
+
+  for(let i=0;i<7;i++){
+    svc.hours[i] = svcHours[i].value;
+  }
+}
+
+/* ============================
+   PHONES
+   ============================ */
+const phonesContainer = document.getElementById("phonesContainer");
+
+function initPhones(){
+  phonesContainer.innerHTML = "";
+  data.phones.forEach((p,idx)=>{
+    const box = document.createElement("div");
+    box.className = "panel-2";
+    box.style.marginBottom = "12px";
+
+    box.innerHTML = `
+      <label>שם</label>
+      <input class="input" value="${p.name}" id="phoneName${idx}">
+      <label>תפקיד</label>
+      <input class="input" value="${p.role}" id="phoneRole${idx}">
+      <label>מספר</label>
+      <input class="input" value="${p.number}" id="phoneNum${idx}">
+      <button class="btn-primary" style="background:#A23B2E;" onclick="deletePhone(${idx})">מחיקה</button>
+    `;
+
+    phonesContainer.appendChild(box);
+  });
+
+  document.getElementById("addPhoneBtn").onclick = ()=>{
+    data.phones.push({name:"",role:"",number:""});
+    initPhones();
+  };
+}
+
+function deletePhone(i){
+  data.phones.splice(i,1);
+  initPhones();
+}
+
+function savePhones(){
+  data.phones.forEach((p,idx)=>{
+    p.name = document.getElementById("phoneName"+idx).value;
+    p.role = document.getElementById("phoneRole"+idx).value;
+    p.number = document.getElementById("phoneNum"+idx).value;
+  });
+}
+
+/* ============================
+   BUS ROUTES
+   ============================ */
+const busRoutesContainer = document.getElementById("busRoutesContainer");
+
+function initBus(){
+  document.getElementById("busFirstHour").value = data.busHours.firstHour;
+  document.getElementById("busLastHourNormal").value = data.busHours.lastHourNormal;
+  document.getElementById("busLastHourThursday").value = data.busHours.lastHourThursday;
+
+  renderBusRoutes();
+
+  document.getElementById("addBusRouteBtn").onclick = ()=>{
+    const nextId = data.busRoutes.length+1;
+    data.busRoutes.push({
+      id:nextId,
+      name:"מסלול "+nextId,
+      minuteOffset:0,
+      stops:""
+    });
+    renderBusRoutes();
+  };
+}
+
+function renderBusRoutes(){
+  busRoutesContainer.innerHTML = "";
+  data.busRoutes.forEach((r,idx)=>{
+    const box = document.createElement("div");
+    box.className = "panel-2";
+    box.style.marginBottom = "12px";
+
+    box.innerHTML = `
+      <label>שם</label>
+      <input class="input" id="routeName${idx}" value="${r.name}">
+      <label>מזהה</label>
+      <input class="input" id="routeId${idx}" type="number" value="${r.id}">
+      <label>דקה</label>
+      <input class="input" id="routeMin${idx}" type="number" value="${r.minuteOffset}">
+      <label>תחנות</label>
+      <textarea class="input" id="routeStops${idx}">${r.stops}</textarea>
+      <button class="btn-primary" style="background:#A23B2E;" onclick="deleteRoute(${idx})">מחיקה</button>
+    `;
+
+    busRoutesContainer.appendChild(box);
+  });
+}
+
+function deleteRoute(i){
+  data.busRoutes.splice(i,1);
+  renderBusRoutes();
+}
+
+function saveBus(){
+  data.busHours.firstHour = Number(document.getElementById("busFirstHour").value);
+  data.busHours.lastHourNormal = Number(document.getElementById("busLastHourNormal").value);
+  data.busHours.lastHourThursday = Number(document.getElementById("busLastHourThursday").value);
+
+  data.busRoutes.forEach((r,idx)=>{
+    r.name = document.getElementById("routeName"+idx).value;
+    r.id = Number(document.getElementById("routeId"+idx).value);
+    r.minuteOffset = Number(document.getElementById("routeMin"+idx).value);
+    r.stops = document.getElementById("routeStops"+idx).value;
+  });
+}
+
+/* ============================
+   TRANSPORT INFO
+   ============================ */
+function initTransport(){
+  document.getElementById("transportTitle").value = data.transportInfo.title;
+  document.getElementById("transportBody").value = data.transportInfo.body.join("\n");
+  document.getElementById("transportVideoUrl").value = data.transportInfo.videoUrl;
+  document.getElementById("transportVideoCaption").value = data.transportInfo.videoCaption;
+  document.getElementById("transportLinkLabel").value = data.transportInfo.linkLabel;
+  document.getElementById("transportLinkUrl").value = data.transportInfo.linkUrl;
+}
+
+function saveTransport(){
+  data.transportInfo.title = document.getElementById("transportTitle").value;
+  data.transportInfo.body = document.getElementById("transportBody").value.split("\n").filter(x=>x.trim());
+  data.transportInfo.videoUrl = document.getElementById("transportVideoUrl").value;
+  data.transportInfo.videoCaption = document.getElementById("transportVideoCaption").value;
+  data.transportInfo.linkLabel = document.getElementById("transportLinkLabel").value;
+  data.transportInfo.linkUrl = document.getElementById("transportLinkUrl").value;
+}
+
+/* ============================
+   SHUTTLES
+   ============================ */
+const shuttlesContainer = document.getElementById("shuttlesContainer");
+
+function initShuttles(){
+  renderShuttles();
+
+  document.getElementById("appStoreUrl").value = data.shuttleApps.appStoreUrl;
+  document.getElementById("googlePlayUrl").value = data.shuttleApps.googlePlayUrl;
+
+  document.getElementById("addShuttleBtn").onclick = ()=>{
+    data.shuttles.push({route:"",days:"",whatsapp:""});
+    renderShuttles();
+  };
+}
+
+function renderShuttles(){
+  shuttlesContainer.innerHTML = "";
+  data.shuttles.forEach((s,idx)=>{
+    const box = document.createElement("div");
+    box.className = "panel-2";
+    box.style.marginBottom = "12px";
+
+    box.innerHTML = `
+      <label>מסלול</label>
+      <input class="input" id="shRoute${idx}" value="${s.route}">
+      <label>ימים</label>
+      <input class="input" id="shDays${idx}" value="${s.days}">
+      <label>ווצאפ</label>
+      <input class="input" id="shWa${idx}" value="${s.whatsapp}">
+      <button class="btn-primary" style="background:#A23B2E;" onclick="deleteShuttle(${idx})">מחיקה</button>
+    `;
+
+    shuttlesContainer.appendChild(box);
+  });
+}
+
+function deleteShuttle(i){
+  data.shuttles.splice(i,1);
+  renderShuttles();
+}
+
+function saveShuttles(){
+  data.shuttles.forEach((s,idx)=>{
+    s.route = document.getElementById("shRoute"+idx).value;
+    s.days = document.getElementById("shDays"+idx).value;
+    s.whatsapp = document.getElementById("shWa"+idx).value;
+  });
+
+  data.shuttleApps.appStoreUrl = document.getElementById("appStoreUrl").value;
+  data.shuttleApps.googlePlayUrl = document.getElementById("googlePlayUrl").value;
+}
+
+/* ============================
+   GUIDELINES
+   ============================ */
+const guidelinesContainer = document.getElementById("guidelinesContainer");
+
+function initGuidelines(){
+  renderGuidelines();
+
+  document.getElementById("addGuidelineBtn").onclick = ()=>{
+    data.guidelines.push({title:"",points:[]});
+    renderGuidelines();
+  };
+}
+
+function renderGuidelines(){
+  guidelinesContainer.innerHTML = "";
+  data.guidelines.forEach((g,idx)=>{
+    const box = document.createElement("div");
+    box.className = "panel-2";
+    box.style.marginBottom = "12px";
+
+    box.innerHTML = `
+      <label>כותרת</label>
+      <input class="input" id="glTitle${idx}" value="${g.title}">
+      <label>נקודות (שורה = נקודה)</label>
+      <textarea class="input" id="glPoints${idx}">${g.points.join("\n")}</textarea>
+      <button class="btn-primary" style="background:#A23B2E;" onclick="deleteGuideline(${idx})">מחיקה</button>
+    `;
+
+    guidelinesContainer.appendChild(box);
+  });
+}
+
+function deleteGuideline(i){
+  data.guidelines.splice(i,1);
+  renderGuidelines();
+}
+
+function saveGuidelines(){
+  data.guidelines.forEach((g,idx)=>{
+    g.title = document.getElementById("glTitle"+idx).value;
+    g.points = document.getElementById("glPoints"+idx).value.split("\n").filter(x=>x.trim());
+  });
+}
+
+/* ============================
+   ABSORPTION STEPS
+   ============================ */
+const absorptionContainer = document.getElementById("absorptionContainer");
+
+function initAbsorption(){
+  renderAbsorption();
+
+  document.getElementById("addAbsorptionStepBtn").onclick = ()=>{
+    data.absorptionSteps.push({title:"",desc:""});
+    renderAbsorption();
+  };
+}
+
+function renderAbsorption(){
+  absorptionContainer.innerHTML = "";
+  data.absorptionSteps.forEach((s,idx)=>{
+    const box = document.createElement("div");
+    box.className = "panel-2";
+    box.style.marginBottom = "12px";
+
+    box.innerHTML = `
+      <label>כותרת</label>
+      <input class="input" id="abTitle${idx}" value="${s.title}">
+      <label>תיאור</label>
+      <textarea class="input" id="abDesc${idx}">${s.desc}</textarea>
+      <button class="btn-primary" style="background:#A23B2E;" onclick="deleteAbsorption(${idx})">מחיקה</button>
+    `;
+
+    absorptionContainer.appendChild(box);
+  });
+}
+
+function deleteAbsorption(i){
+  data.absorptionSteps.splice(i,1);
+  renderAbsorption();
+}
+
+function saveAbsorption(){
+  data.absorptionSteps.forEach((s,idx)=>{
+    s.title = document.getElementById("abTitle"+idx).value;
+    s.desc = document.getElementById("abDesc"+idx).value;
+  });
+}
+
+/* ============================
+   INIT ALL UI
+   ============================ */
+function initUI(){
+  initServices();
+  initPhones();
+  initBus();
+  initTransport();
+  initShuttles();
+  initGuidelines();
+  initAbsorption();
+}
+
+/* ============================
+   SAVE BUTTON
+   ============================ */
+document.getElementById("saveBtn").onclick = async ()=>{
+  saveService();
+  savePhones();
+  saveBus();
+  saveTransport();
+  saveShuttles();
+  saveGuidelines();
+  saveAbsorption();
+
+  const status = document.getElementById("saveStatus");
+  status.textContent = "שומר...";
+
+  try{
+    const res = await fetch("/api/update-data",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(data)
+    });
+
+    if(res.ok){
+      status.textContent = "נשמר בהצלחה!";
+      status.className = "save-status ok";
+    } else {
+      status.textContent = "שגיאה בשמירה";
+      status.className = "save-status err";
+    }
+  } catch(e){
+    status.textContent = "שגיאה בחיבור";
+    status.className = "save-status err";
+  }
+};
+</script>
+
+</body>
+</html>
+
