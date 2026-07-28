@@ -10,7 +10,7 @@
 // משתני סביבה נדרשים (Vercel -> Project Settings -> Environment Variables):
 //   ADMIN_PASSWORD   - הסיסמה שמוזנת בדף המנהלים (למשל Ovda10!)
 //   GITHUB_TOKEN     - Personal Access Token (מומלץ Fine-grained), הרשאת Contents: Read and write על הריפו הזה בלבד
-//   GITHUB_OWNER     - שם המשתמש/הארגון ב-GitHub, לדוגמה 'my-username'
+//   GITHUB_OWNER     - שם המשתמש/הארגון ב-GitHub, לדוגמה 'my-user'
 //   GITHUB_REPO      - שם הריפו
 //   GITHUB_BRANCH    - שם הענף (אופציונלי, ברירת מחדל: main)
 
