@@ -107,9 +107,9 @@ export default async function handler(req, res) {
   if (invalid) return res.status(400).json({ ok: false, error: invalid });
 
   const content = JSON.stringify(data, null, 2) + '\n';
-  const encoded = Buffer.from(content, 'utf8').toString('base64');
-  const filePath = encodeURIComponent(FILE_PATH).replace(/%2F/g, '/');
-  const base = `/repos/${GITHUB_REPO}/contents/${filePath}`;
+  const encoded = Buffer.from(content).toString('base64');
+  const cleanPath = FILE_PATH.replace(/^\//, '');
+  const base = `/repos/${GITHUB_REPO}/contents/${encodeURIComponent(cleanPath).replace(/%2F/g, '/')}`;
 
   try {
     // 1) שליפת ה-sha הנוכחי של הקובץ
