@@ -14,13 +14,14 @@
 // ============================================================
 console.log("ADMIN:", !!process.env.ADMIN_PASSWORD);
 console.log("TOKEN:", !!process.env.GITHUB_TOKEN);
-function timingSafeEqual(a, b) {
-  const bufA = Buffer.from(String(a));
-  const bufB = Buffer.from(String(b));
+import crypto from 'crypto';
+
+function safeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
   if (bufA.length !== bufB.length) return false;
-  let diff = 0;
-  for (let i = 0; i < bufA.length; i++) diff |= bufA[i] ^ bufB[i];
-  return diff === 0;
+  return crypto.timingSafeEqual(bufA, bufB);
 }
 
 // בדיקת שפיות בסיסית למבנה הנתונים, כדי שלא יישמר קובץ פגום
@@ -81,6 +82,9 @@ export default async function handler(req, res) {
   }
 
   let payload = req.body;
+  if (Buffer.isBuffer(payload)) {
+    payload = payload.toString('utf8');
+  }
   if (typeof payload === 'string') {
     try { payload = JSON.parse(payload); } catch (_) { payload = null; }
   }
@@ -143,6 +147,11 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('update-data error', err);
-    return res.status(500).json({ ok: false, error: 'שגיאה בלתי צפויה בשרת' });
+    return res.status(500).json({ 
+      ok: false, 
+      error: 'שגיאה בלתי צפויה בשרת',
+      details: err.message,
+      stack: err.stack 
+    });
   }
 }
