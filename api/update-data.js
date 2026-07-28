@@ -6,7 +6,7 @@
 //  Environment Variables הנדרשים (Vercel → Settings → Environment Variables):
 //    ADMIN_PASSWORD  - סיסמת המנהלים (Ovda10!)
 //    GITHUB_TOKEN    - Personal Access Token עם הרשאת Contents: Read & Write
-//    GITHUB_REPO     - owner/repo  (למשל: myuser/ovda-site)
+//    GITHUB_REPO     - owner/repo  (למשל: user/ovda-site)
 //    GITHUB_BRANCH   - אופציונלי, ברירת מחדל: main
 //    GITHUB_FILE_PATH- אופציונלי, ברירת מחדל: data.json
 //
