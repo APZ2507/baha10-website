@@ -10,13 +10,28 @@
 // משתני סביבה נדרשים (Vercel -> Project Settings -> Environment Variables):
 //   ADMIN_PASSWORD   - הסיסמה שמוזנת בדף המנהלים (למשל Ovda10!)
 //   GITHUB_TOKEN     - Personal Access Token (מומלץ Fine-grained), הרשאת Contents: Read and write על הריפו הזה בלבד
-//   GITHUB_OWNER     - שם המשתמש/הארגון ב-GitHub, לדוגמה 'my-user'
+//   GITHUB_OWNER     - שם המשתמש/הארגון ב-GitHub, לדוגמה 'my-username'
 //   GITHUB_REPO      - שם הריפו
 //   GITHUB_BRANCH    - שם הענף (אופציונלי, ברירת מחדל: main)
 
 const GITHUB_FILE_PATH = 'data.json'; // הנתיב לקובץ בתוך הריפו - שנו כאן אם הקובץ יעבור למיקום אחר
 
 module.exports = async (req, res) => {
+  // ===== בלוק דיבאג זמני - למחוק את זה אחרי שהבעיה נפתרת! =====
+  // פותחים בדפדפן: https://הכתובת-שלכם.vercel.app/api/update-data
+  // זה לא חושף שום סיסמה/טוקן בפועל - רק true/false אם המשתנה קיים בכלל בצד השרת.
+  if (req.method === 'GET') {
+    res.status(200).json({
+      hasAdminPassword: !!process.env.ADMIN_PASSWORD,
+      hasGithubToken: !!process.env.GITHUB_TOKEN,
+      hasGithubOwner: !!process.env.GITHUB_OWNER,
+      hasGithubRepo: !!process.env.GITHUB_REPO,
+      githubBranch: process.env.GITHUB_BRANCH || 'main (ברירת מחדל)',
+    });
+    return;
+  }
+  // ===== סוף בלוק דיבאג =====
+
   if (req.method !== 'POST') {
     res.status(405).json({ ok: false, error: 'Method not allowed' });
     return;
