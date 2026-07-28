@@ -12,7 +12,8 @@
 //
 //  שום סוד אינו כתוב בקוד ואינו נשלח לדפדפן.
 // ============================================================
-
+console.log("ADMIN:", !!process.env.ADMIN_PASSWORD);
+console.log("TOKEN:", !!process.env.GITHUB_TOKEN);
 function timingSafeEqual(a, b) {
   const bufA = Buffer.from(String(a));
   const bufB = Buffer.from(String(b));
