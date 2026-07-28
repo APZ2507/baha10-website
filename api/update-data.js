@@ -4,16 +4,13 @@
 //  שמירת השינוי ב-GitHub מפעילה Deploy אוטומטי ב-Vercel.
 //
 //  Environment Variables הנדרשים (Vercel → Settings → Environment Variables):
-//    ADMIN_PASSWORD  - סיסמת המנהלים (Ovda10!)
+//    ADMIN_PASSWORD  - סיסמת המנהלים
 //    GITHUB_TOKEN    - Personal Access Token עם הרשאת Contents: Read & Write
 //    GITHUB_REPO     - owner/repo  (למשל: user/ovda-site)
 //    GITHUB_BRANCH   - אופציונלי, ברירת מחדל: main
 //    GITHUB_FILE_PATH- אופציונלי, ברירת מחדל: data.json
-//
-//  שום סוד אינו כתוב בקוד ואינו נשלח לדפדפן.
 // ============================================================
-console.log("ADMIN:", !!process.env.ADMIN_PASSWORD);
-console.log("TOKEN:", !!process.env.GITHUB_TOKEN);
+
 import crypto from 'crypto';
 
 function safeCompare(a, b) {
@@ -66,8 +63,18 @@ async function gh(path, token, init = {}) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
+  // הגדרת כותרות CORS לשימוש בטוח מכל דומיין/סביבה
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // טיפול בבקשות Preflight (OPTIONS) שהדפדפן שולח לפני POST
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Allow', 'POST, OPTIONS');
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'POST, OPTIONS');
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
   }
 
@@ -88,11 +95,14 @@ export default async function handler(req, res) {
   if (typeof payload === 'string') {
     try { payload = JSON.parse(payload); } catch (_) { payload = null; }
   }
-  if (!payload) return res.status(400).json({ ok: false, error: 'בקשה לא תקינה' });
+  if (!payload || typeof payload !== 'object') {
+    return res.status(400).json({ ok: false, error: 'בקשה לא תקינה (פילוד ריק או שגוי)' });
+  }
 
   const { action, password, data } = payload;
 
-  if (!password || !timingSafeEqual(password, ADMIN_PASSWORD)) {
+  // שימוש בפונקציה safeCompare המתוקנת
+  if (!password || !safeCompare(password, ADMIN_PASSWORD)) {
     // השהיה קצרה כדי להקשות על ניחוש סיסמאות
     await new Promise((r) => setTimeout(r, 600));
     return res.status(401).json({ ok: false, error: 'סיסמה שגויה' });
@@ -111,7 +121,7 @@ export default async function handler(req, res) {
   if (invalid) return res.status(400).json({ ok: false, error: invalid });
 
   const content = JSON.stringify(data, null, 2) + '\n';
-  const encoded = Buffer.from(content).toString('base64');
+  const encoded = Buffer.from(content, 'utf8').toString('base64');
   const cleanPath = FILE_PATH.replace(/^\//, '');
   const base = `/repos/${GITHUB_REPO}/contents/${encodeURIComponent(cleanPath).replace(/%2F/g, '/')}`;
 
