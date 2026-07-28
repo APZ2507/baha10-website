@@ -1,0 +1,6 @@
+{
+  "name": "base-services-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static base-services site with an admin panel backed by a Vercel serverless function that publishes data.json to GitHub."
+}
