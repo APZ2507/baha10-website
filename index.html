@@ -593,6 +593,7 @@ const CATEGORIES = [
   { id:'health',      name:'בריאות',          icon:'⚕' },
   { id:'food',        name:'אוכל',            icon:'🍽' },
   { id:'logistics',   name:'לוגיסטיקה',       icon:'📦' },
+  { id:'manpower',    name:'כוח אדם',         icon:'👥' },
   { id:'sport',       name:'ספורט ופנאי',     icon:'🏊' },
   { id:'transport',   name:'תחבורה',          icon:'🚌' },
   { id:'prayers',     name:'תפילות',          icon:'🕍' },
@@ -1221,7 +1222,7 @@ init();
   </div>
   <div id="chatbot-messages" aria-live="polite"></div>
   <div id="chatbot-input-wrap">
-    <input id="chatbot-input" type="text" placeholder="שאלו שאלה... (למשל: השקם פתוח?)" autocomplete="off">
+    <input id="chatbot-input" type="text" placeholder="שאלו שאלה... (למשל: מה פתוח עכשיו?)" autocomplete="off">
     <button id="chatbot-send" aria-label="שלח">➤</button>
   </div>
 </div>
@@ -1232,6 +1233,7 @@ init();
     health:{label:'בריאות',icon:'⚕'},
     food:{label:'אוכל',icon:'🍽'},
     logistics:{label:'לוגיסטיקה',icon:'🧰'},
+    manpower:{label:'כוח אדם',icon:'👥'},
     sport:{label:'ספורט',icon:'🏋'},
     prayers:{label:'תפילות',icon:'🕍'},
     transport:{label:'תחבורה',icon:'🚌'}
@@ -1305,6 +1307,7 @@ init();
     msgs.innerHTML = '';
     addMsg('שלום! 👋 אני בוט 10. במה אפשר לעזור?');
     addChips([
+      {label:'🟢 מה פתוח עכשיו',action:showOpenNow},
       {label:'📋 קטגוריות ושעות',action:showCategories},
       {label:'🚌 קו 10 (הסעות פנימיות)',action:showBusMenu},
       {label:'📞 טלפונים',action:showPhones},
@@ -1314,7 +1317,7 @@ init();
     ]);
   }
   function showExamples(){
-    addMsg('נסו לשאול לדוגמה:<br>• "השקם פתוח?"<br>• "שעות של המרפאה"<br>• "אני צריך להגיע למגדל ב-19:00"<br>• "טלפון למושלם"<br>• "שאטל מירושלים"<br>• "מה הנוהל לצילום בבסיס?"<br>• "מה עושים בהתרעה?"');
+    addMsg('נסו לשאול לדוגמה:<br>• "מה פתוח עכשיו?"<br>• "השקם פתוח?"<br>• "עד מתי הנשקייה פתוחה?"<br>• "מתי משרד הרישום פתוח ביום חמישי?"<br>• "שעות של המרפאה"<br>• "אני צריך להגיע למגדל ב-19:00"<br>• "טלפון למושלם"<br>• "שאטל מירושלים"<br>• "מה הנוהל לצילום בבסיס?"<br>• "מה עושים בהתרעה?"');
   }
   function showGuidelinesMenu(){
     const g = (DATA.guidelines||[]);
@@ -1405,12 +1408,52 @@ init();
     addMsg('כתבו: "אני צריך להגיע ל<b>[יעד]</b> ב<b>[שעה]</b>" — למשל: <i>אני צריך להגיע למגדל ב-19:00</i>');
   }
 
+  /* ---------- הבנת שפה: נרמול, שגיאות כתיב והתאמה מטושטשת ---------- */
+  // מנקה גרשיים/ניקוד/סימני פיסוק, מאחד אותיות סופיות ומורידה תחיליות (ה/ב/ל/ו/ש/כ/מ)
+  // כדי ש"בשקם", "השק\"ם" ו"שקם" ייחשבו לאותו דבר.
+  function norm(str){
+    return String(str==null?'':str)
+      .toLowerCase()
+      .replace(/[\u0591-\u05C7]/g,'')
+      .replace(/["'`׳״]/g,'')
+      .replace(/[.,!?;:()\-–]/g,' ')
+      .replace(/ך/g,'כ').replace(/ם/g,'מ').replace(/ן/g,'נ').replace(/ף/g,'פ').replace(/ץ/g,'צ')
+      .replace(/\s+/g,' ').trim();
+  }
+  function stripPrefix(w){
+    return (w.length>3 && /^[הבלושכמ]/.test(w)) ? w.slice(1) : w;
+  }
+  function tokens(t){
+    const out = [];
+    norm(t).split(' ').filter(Boolean).forEach(w=>{ out.push(w); const b=stripPrefix(w); if(b!==w) out.push(b); });
+    return out;
+  }
+  // מרחק עריכה - סובלנות לשגיאות כתיב ("מרפה" → "מרפאה")
+  function lev(a,b){
+    if(Math.abs(a.length-b.length)>2) return 9;
+    const m=a.length,n=b.length; let prev=Array.from({length:n+1},(_,j)=>j);
+    for(let i=1;i<=m;i++){
+      const cur=[i];
+      for(let j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+      prev=cur;
+    }
+    return prev[n];
+  }
+  function kwMatch(text, kw){
+    const t = norm(text), k = norm(kw);
+    if(!k) return false;
+    if(t.includes(k)) return true;
+    if(k.includes(' ')) return false;          // ביטויים - רק התאמה מלאה
+    if(k.length < 4) return false;             // מילים קצרות - בלי ניחושים
+    const tol = k.length >= 6 ? 2 : 1;
+    return tokens(t).some(w => lev(w,k) <= tol);
+  }
+
   /* ---------- Q&A ---------- */
   function findService(text){
-    const t = text.replace(/["']/g,'');
+    const t = norm(text);
     for(const [k,s] of Object.entries(DATA.services)){
-      const names = [s.name, s.name.replace(/"/g,''), k];
-      if(names.some(n=>t.includes(n))) return [k,s];
+      if([s.name,k].some(n=>kwMatch(t,n))) return [k,s];
     }
     // aliases - מילים נוספות שמובילות ישירות לשירות ספציפי (חד-משמעי, לא מעורפל בין כמה שירותים)
     const aliases = {
@@ -1430,6 +1473,8 @@ init();
       'בשריה':'meat-kitchen','בשרייה':'meat-kitchen','חלביה':'dairy-kitchen','חלבייה':'dairy-kitchen',
       // שק"ם
       'שקם':'shekem','שק"ם':'shekem','קיוסק':'shekem','חנות':'shekem','חטיף':'shekem','חטיפים':'shekem','קניות':'shekem',
+      // משרד רישום בסיסי / כוח אדם
+      'משרד רישום':'adjutancy','רישום בסיסי':'adjutancy','רישום':'adjutancy','שלישות':'adjutancy','משאבי אנוש':'adjutancy','אישור העסקה':'adjutancy','תעודת מילואים':'adjutancy','טופס 101':'adjutancy','חופשה':'adjutancy','אישור מחלה':'adjutancy','תלוש':'adjutancy','דוח נוכחות':'adjutancy','נוכחות':'adjutancy','שינוי פרטים':'adjutancy','חוגר':'adjutancy',
       // אפסנאות
       'אפסנאות':'quartermaster','ציוד אישי':'quartermaster','מדים':'quartermaster',
       // נשקייה
@@ -1439,10 +1484,22 @@ init();
       'שחרית':'synagogue','מנחה':'synagogue','ערבית':'synagogue','סידור':'synagogue','טלית':'synagogue','תפילין':'synagogue',
       'כיפור':'synagogue','סוכות':'synagogue','פסח':'synagogue','שבועות':'synagogue','ראש השנה':'synagogue','קבלת שבת':'synagogue','הבדלה':'synagogue',
     };
-    for(const [a,k] of Object.entries(aliases)){
-      if(t.includes(a) && DATA.services[k]) return [k,DATA.services[k]];
+    // מהארוך לקצר, כדי ש"רופא שיניים" ינצח את "רופא"
+    const sorted = Object.entries(aliases).sort((a,b)=>b[0].length-a[0].length);
+    for(const [a,k] of sorted){
+      if(kwMatch(t,a) && DATA.services[k]) return [k,DATA.services[k]];
     }
     return null;
+  }
+  // הצעות "אולי התכוונתם" - השירותים הקרובים ביותר למה שנכתב
+  function suggestServices(text){
+    const t = tokens(text);
+    const scored = Object.entries(DATA.services).map(([k,s])=>{
+      let best = 9;
+      norm(s.name).split(' ').forEach(nw=>{ t.forEach(w=>{ if(w.length>2&&nw.length>2) best=Math.min(best,lev(w,nw)); }); });
+      return {k,s,best};
+    }).filter(x=>x.best<=2).sort((a,b)=>a.best-b.best).slice(0,4);
+    return scored;
   }
 
   // מילות מפתח כלליות/מעורפלות שיכולות להתאים לכמה שירותים באותה קטגוריה - מובילות לתפריט הקטגוריה
@@ -1450,11 +1507,14 @@ init();
     health: ['בריאות','רפואה','רפואי','חולה','כואב','כאב','כאבים','פציעה','נפגעתי','תרופה','תרופות','טיפול','רופא','רופאה','אחות'],
     food: ['אוכל','רעב','רעבה','ארוחה','ארוחות','לאכול','מזון','כשר','לסעוד'],
     logistics: ['ציוד','לוגיסטיקה'],
-    sport: ['ספורט','פעילות גופנית']
+    manpower: ['כוח אדם','כח אדם','פרטים אישיים','אדמיניסטרציה','מנהלה אישית','טפסים'],
+    sport: ['ספורט','פעילות גופנית','להתאמן','אימונים'],
+    prayers: ['תפילה','תפילות','דת','דתי','בית כנסת','חג','חגים'],
+    transport: ['תחבורה','נסיעה','הסעות']
   };
   function answerCategoryKeyword(text){
     for(const [cat, words] of Object.entries(CATEGORY_KEYWORDS)){
-      if(words.some(w=>text.includes(w))){
+      if(words.some(w=>kwMatch(text,w))){
         showCategory(cat);
         return true;
       }
@@ -1606,6 +1666,52 @@ init();
     addMsg(html);
     return true;
   }
+  /* ---------- תשובות חכמות נוספות ---------- */
+  function minutesNow(){ const n=new Date(); return n.getHours()*60+n.getMinutes(); }
+  function fmtMin(m){ return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); }
+  // מתי נסגר / מתי ייפתח - כולל גלישה לימים הבאים
+  function nextChange(s){
+    const now = minutesNow(), day = new Date().getDay();
+    const today = parseRanges(s.hours[day]||'');
+    const cur = today.find(r=>now>=r.startMin && now<r.endMin);
+    if(cur) return {open:true, text:'נסגר היום ב-<b>'+fmtMin(cur.endMin)+'</b> (בעוד '+Math.round((cur.endMin-now)/60*10)/10+' שעות)'};
+    const later = today.filter(r=>r.startMin>now).sort((a,b)=>a.startMin-b.startMin)[0];
+    if(later) return {open:false, text:'ייפתח היום ב-<b>'+fmtMin(later.startMin)+'</b>'};
+    for(let i=1;i<=7;i++){
+      const d=(day+i)%7, r=parseRanges(s.hours[d]||'').sort((a,b)=>a.startMin-b.startMin)[0];
+      if(r) return {open:false, text:'ייפתח ביום <b>'+DAYS[d]+'</b> ב-<b>'+fmtMin(r.startMin)+'</b>'};
+    }
+    return {open:false, text:'אין שעות פעילות מוגדרות.'};
+  }
+  function showOpenNow(){
+    const open = Object.entries(DATA.services).filter(([,s])=>isOpenNow(s.hours));
+    if(!open.length){ addMsg('<b>🔴 כרגע אין שירות פתוח.</b>'); }
+    else {
+      let html = '<b>🟢 פתוח כרגע ('+open.length+'):</b><div style="margin-top:4px;font-size:13px">';
+      open.forEach(([k,s])=>{ const c=nextChange(s); html += `<div style="padding:3px 0">${s.icon} <b>${s.name}</b> — <span style="color:#4C7A4A">${c.text}</span></div>`; });
+      addMsg(html+'</div>');
+    }
+    const closed = Object.entries(DATA.services).filter(([,s])=>!isOpenNow(s.hours));
+    if(closed.length){
+      addChips(closed.slice(0,6).map(([k,s])=>({label:'🔴 '+s.name, action:()=>showService(k)})).concat([{label:'🏠 תפריט ראשי',back:true,action:greet}]));
+    }
+  }
+  function dayInText(text){
+    const t = norm(text);
+    if(/\bמחר\b|מחר/.test(t)) return (new Date().getDay()+1)%7;
+    const i = DAYS.findIndex(d=>t.includes('יומ '+norm(d)) || t.includes('ביומ '+norm(d)) || t.includes(norm(d)));
+    return i>=0 ? i : null;
+  }
+  function showServiceDay(key, day){
+    const s = DATA.services[key];
+    const raw = s.hours[day]||'';
+    addMsg(`<b>${s.icon} ${s.name}</b><br>יום <b>${DAYS[day]}</b>: ${raw ? raw : '<span style="color:#A23B2E">סגור</span>'}`);
+    addChips([
+      {label:'📅 כל השבוע',action:()=>showService(key)},
+      {label:'🏠 תפריט ראשי',back:true,action:greet}
+    ]);
+  }
+
   function processQuestion(q){
     const text = q.trim();
     if(!text) return;
@@ -1615,6 +1721,9 @@ init();
     // greetings
     if(/^(שלום|היי|hello|hi)/i.test(text)){ addMsg('שלום! 👋'); return greet(); }
     if(/תפריט|עזרה|תודה/.test(text)){ return greet(); }
+
+    // "מה פתוח עכשיו?" - סקירה מהירה של כל השירותים
+    if(/מה פתוח|מי פתוח|משהו פתוח|מה עכשיו פתוח|מה סגור/.test(text)) return showOpenNow();
 
     // shuttles (city + day + "home") — check BEFORE service lookup so "מודיעין" doesn't match a service
     if(answerShuttle(text)) return;
@@ -1626,16 +1735,23 @@ init();
     }
     // phones
     if(answerPhone(text)) return;
-    // guidelines
-    if(answerGuidelines(text)) return;
+    // שאלת שעות על שירות מזוהה - קודמת לנהלים, כדי ש"עד מתי הנשקייה פתוחה" לא ייחשב לשאלת נוהל
+    if(/פתוח|פתוחה|סגור|סגורה|שעות|עד מתי|מתי/.test(text) && findService(text)) { /* ממשיך לבדיקת השירות למטה */ }
+    else if(answerGuidelines(text)) return;
     // service lookup (מורחב עם אוצר מילים גדול יותר - ראו aliases בתוך findService)
     const svc = findService(text);
     if(svc){
       const [k,s] = svc;
-      if(/פתוח|שעות|מתי|עד מתי|סגור/.test(text)||true){
-        showService(k);
+      const day = dayInText(text);
+      if(day!==null && day!==new Date().getDay()) return showServiceDay(k, day);
+      if(/עד מתי|מתי נסגר|מתי ייסגר|מתי נפתח|מתי ייפתח|מתי פותח/.test(text)){
+        const c = nextChange(s);
+        addMsg(`<b>${s.icon} ${s.name}</b> <span class="cb-status ${c.open?'open':'closed'}">${c.open?'פתוח כעת':'סגור כעת'}</span><br>${c.text}`);
+        addChips([{label:'📅 שעות מלאות',action:()=>showService(k)},{label:'🏠 תפריט ראשי',back:true,action:greet}]);
         return;
       }
+      showService(k);
+      return;
     }
     // מונח כללי/מעורפל שמתאים לכמה שירותים באותה קטגוריה (למשל "כואב לי" / "רעב") - מציגים תפריט קטגוריה
     if(answerCategoryKeyword(text)) return;
@@ -1644,9 +1760,17 @@ init();
       showBusMenu();
       return;
     }
-    // fallback
+    // fallback - קודם מנסים "אולי התכוונתם", ורק אז תפריט
+    const guesses = suggestServices(text);
+    if(guesses.length){
+      addMsg('לא בטוח שהבנתי — אולי התכוונתם לאחד מאלה?');
+      addChips(guesses.map(g=>({label:g.s.icon+' '+g.s.name, action:()=>showService(g.k)}))
+        .concat([{label:'📋 כל הקטגוריות',back:true,action:showCategories}]));
+      return;
+    }
     addMsg('לא הבנתי במדויק, נסו לבחור מהתפריט:');
     addChips([
+      {label:'🟢 מה פתוח עכשיו',action:showOpenNow},
       {label:'📋 קטגוריות',action:showCategories},
       {label:'🚌 קו 10',action:showBusMenu},
       {label:'📞 טלפונים',action:showPhones},
@@ -1738,6 +1862,11 @@ init();
 .admin-status.ok{color:var(--open,#4C7A4A);}
 .admin-status.err{color:var(--closed,#A23B2E);}
 .admin-card-head{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+.admin-actions{position:sticky; bottom:0; background:var(--panel,#FFFAF2); padding:10px 0 4px; border-top:1px solid rgba(46,33,48,.12); z-index:2;}
+.admin-tabs{position:sticky; top:0; background:var(--panel,#FFFAF2); z-index:3; padding-block:6px;}
+.admin-filter{width:100%; padding:9px 12px; border-radius:10px; border:1px solid rgba(46,33,48,.2); font-family:inherit; font-size:14px; margin-bottom:10px; background:#fff;}
+.admin-cat-head{margin:14px 0 6px; font-family:'Heebo',sans-serif; font-weight:900; color:var(--olive-dark,#3B2A52); font-size:15px;}
+.admin-dirty{display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--brass,#E8A33D); margin-inline-start:6px; vertical-align:middle;}
 </style>
 
 <button id="adminFab" title="כניסת מנהלים" aria-label="כניסת מנהלים">🔒</button>
@@ -1761,7 +1890,7 @@ init();
     <div id="adminEditor" style="display:none;">
       <div class="admin-tabs" id="adminTabs"></div>
       <div id="adminPanes"></div>
-      <div class="admin-top" style="margin-top:16px;">
+      <div class="admin-top admin-actions" style="margin-top:16px;">
         <div class="admin-status" id="adminSaveMsg"></div>
         <div style="display:flex; gap:8px;">
           <button class="admin-btn ghost" id="adminReload">טעינה מחדש (ביטול שינויים)</button>
@@ -1776,7 +1905,8 @@ init();
 <script>
 (function(){
   const DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-  const CATS = ['health','food','logistics','sport','transport','prayers'];
+  const CATS = ['health','food','logistics','manpower','sport','transport','prayers'];
+  const CAT_LABELS = {health:'בריאות', food:'אוכל', logistics:'לוגיסטיקה', manpower:'כוח אדם', sport:'ספורט ופנאי', transport:'תחבורה', prayers:'תפילות'};
   const API = '/api/update-data';
 
   const overlay = document.getElementById('adminOverlay');
@@ -1791,12 +1921,22 @@ init();
 
   let password = '';
   let data = null;
+  let svcFilter = '';
+  let dirty = false;
+
+  function markDirty(){
+    dirty = true;
+    saveMsg.className = 'admin-status';
+    saveMsg.innerHTML = 'יש שינויים שלא נשמרו <span class="admin-dirty"></span>';
+  }
+  function markClean(){ dirty = false; }
+  window.addEventListener('beforeunload', e=>{ if(dirty){ e.preventDefault(); e.returnValue=''; } });
 
   const esc = s => String(s == null ? '' : s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
   function open(){ overlay.classList.add('open'); document.body.style.overflow='hidden'; }
-  function close(){ overlay.classList.remove('open'); document.body.style.overflow=''; if(location.hash==='#admin') history.replaceState(null,'',location.pathname); }
+  function close(){ if(dirty && !confirm('יש שינויים שלא נשמרו. לצאת בלי לשמור?')) return; dirty=false; overlay.classList.remove('open'); document.body.style.overflow=''; if(location.hash==='#admin') history.replaceState(null,'',location.pathname); }
 
   fab.addEventListener('click', open);
   document.getElementById('adminClose').addEventListener('click', close);
@@ -1838,7 +1978,7 @@ init();
   }
   document.getElementById('adminReload').addEventListener('click', async ()=>{
     saveMsg.className='admin-status'; saveMsg.textContent='טוען מחדש...';
-    await loadData(); saveMsg.textContent='הנתונים נטענו מחדש מהשרת.';
+    await loadData(); markClean(); saveMsg.textContent='הנתונים נטענו מחדש מהשרת.';
   });
 
   // ---------- כלי בנייה ----------
@@ -1849,7 +1989,7 @@ init();
     if (opts.type === 'textarea')
       input = '<textarea '+common+'>'+esc(value)+'</textarea>';
     else if (opts.type === 'select')
-      input = '<select '+common+'>'+opts.options.map(o=>'<option value="'+esc(o)+'"'+(o===value?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+      input = '<select '+common+'>'+opts.options.map(o=>'<option value="'+esc(o)+'"'+(o===value?' selected':'')+'>'+esc((opts.labels&&opts.labels[o])||o)+'</option>').join('')+'</select>';
     else
       input = '<input type="'+(opts.type||'text')+'" '+common+' value="'+esc(value)+'">';
     return '<div class="admin-field'+(opts.wide?' wide':'')+'"><label>'+esc(label)+'</label>'+input+'</div>';
@@ -1857,7 +1997,7 @@ init();
 
   function bind(){
     panesEl.querySelectorAll('[data-path]').forEach(el=>{
-      el.oninput = ()=> setByPath(el.getAttribute('data-path'), el.type==='number' ? Number(el.value) : el.value);
+      el.oninput = ()=>{ setByPath(el.getAttribute('data-path'), el.type==='number' ? Number(el.value) : el.value); markDirty(); };
     });
   }
 
@@ -1887,6 +2027,10 @@ init();
       b.onclick = ()=>{ activeTab = b.getAttribute('data-tab'); renderAll(); };
     });
     panesEl.querySelectorAll('[data-action]').forEach(b=>{ b.onclick = ()=> handleAction(b.dataset.action, b.dataset.key); });
+    const filterEl = document.getElementById('svcFilter');
+    if (filterEl){
+      filterEl.oninput = ()=>{ svcFilter = filterEl.value; renderAll(); const el=document.getElementById('svcFilter'); if(el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length); } };
+    }
     bind();
   }
 
@@ -1914,20 +2058,37 @@ init();
     else if (action === 'del-point'){ const [g,p]=key.split(':'); data.guidelines[+g].points.splice(+p,1); }
     else if (action === 'add-step') data.absorptionSteps.push({title:'שלב חדש', desc:''});
     else if (action === 'del-step'){ if(confirm('למחוק שלב?')) data.absorptionSteps.splice(+key,1); else return; }
+    markDirty();
     renderAll();
   }
 
   // ---------- מסכי עריכה ----------
   function renderServices(){
     let html = '<p class="admin-hint">שעות: כתבו "08:00-12:00", מספר טווחים מופרדים בפסיק, ואפשר תווית בסוגריים. שדה ריק = סגור.</p>';
+    html += '<input class="admin-filter" id="svcFilter" placeholder="🔎 סינון לפי שם שירות או קטגוריה..." value="'+esc(svcFilter)+'">';
     html += '<button class="admin-btn small" data-action="add-service">+ הוספת שירות</button><div style="height:10px"></div>';
-    Object.keys(data.services).forEach(key=>{
+    const f = svcFilter.trim();
+    const keys = Object.keys(data.services).filter(k=>{
+      if(!f) return true;
+      const s = data.services[k];
+      return (s.name||'').includes(f) || k.includes(f) || (CAT_LABELS[s.category]||'').includes(f);
+    });
+    if(!keys.length) html += '<p class="admin-hint">לא נמצאו שירותים תואמים.</p>';
+    // מקובצים לפי קטגוריה כדי שיהיה קל למצוא
+    const byCat = {};
+    keys.forEach(k=>{ const c=data.services[k].category||'אחר'; (byCat[c]=byCat[c]||[]).push(k); });
+    const order = CATS.filter(c=>byCat[c]).concat(Object.keys(byCat).filter(c=>!CATS.includes(c)));
+    const ordered = [];
+    order.forEach(c=>{ ordered.push({head:CAT_LABELS[c]||c, count:byCat[c].length}); byCat[c].forEach(k=>ordered.push({key:k})); });
+    ordered.forEach(item=>{
+      if(item.head){ html += '<div class="admin-cat-head">'+esc(item.head)+' <span style="font-weight:400;color:#888;font-size:12px">('+item.count+')</span></div>'; return; }
+      const key = item.key;
       const s = data.services[key];
       html += '<div class="admin-card"><div class="admin-card-head"><h4>'+esc(s.name||key)+' <span style="font-weight:400;font-size:12px;color:#888">('+esc(key)+')</span></h4>'+
         '<button class="admin-btn danger small" data-action="del-service" data-key="'+esc(key)+'">מחיקה</button></div>';
       html += '<div class="admin-row">'
         + field('שם', s.name, 'services|'+key+'|name')
-        + field('קטגוריה', s.category, 'services|'+key+'|category', {type:'select', options:CATS})
+        + field('קטגוריה', s.category, 'services|'+key+'|category', {type:'select', options:CATS, labels:CAT_LABELS})
         + field('אייקון', s.icon, 'services|'+key+'|icon')
         + '</div>';
       html += '<div class="admin-row">';
@@ -2058,12 +2219,19 @@ init();
       if (!res.ok || !out.ok) throw new Error(out.error || 'השמירה נכשלה');
       saveMsg.className = 'admin-status ok';
       saveMsg.textContent = '✔ נשמר בהצלחה! הפרסום לכלל המשתמשים יסתיים תוך כדקה.';
+      markClean();
     }catch(e){
       saveMsg.className = 'admin-status err';
       saveMsg.textContent = '✖ ' + (e.message || 'שגיאה בשמירה');
     }finally{
       saveBtn.disabled = false;
     }
+  });
+  // Ctrl/Cmd+S = שמירה מהירה, Esc = סגירה
+  document.addEventListener('keydown', e=>{
+    if(!overlay.classList.contains('open')) return;
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); if(!saveBtn.disabled && data) saveBtn.click(); }
+    if(e.key==='Escape' && !dirty) close();
   });
 })();
 </script>
