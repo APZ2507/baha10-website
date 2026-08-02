@@ -2322,13 +2322,14 @@ init();
 #adminOverlay{
   position:fixed; inset:0; z-index:9500; display:none;
   background:rgba(46,33,48,.55); backdrop-filter:blur(3px);
-  overflow-y:auto; padding:20px 12px;
+  overflow:hidden; padding:20px 12px;
 }
-#adminOverlay.open{display:block} 
+#adminOverlay.open{display:flex; justify-content:center; align-items:stretch;}
 .admin-shell{
-  max-width:960px; margin:0 auto; background:var(--panel,#FFFAF2);
+  width:100%; max-width:960px; margin:0 auto; background:var(--panel,#FFFAF2);
   border-radius:16px; box-shadow:0 24px 60px -24px rgba(46,33,48,.7);
-  padding:18px 18px 28px; font-family:'Assistant',sans-serif;
+  padding:0 18px; font-family:'Assistant',sans-serif;
+  display:flex; flex-direction:column; max-height:100%; min-height:0; overflow:hidden;
 }
 .admin-top{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px;}
 .admin-top h2{font-size:22px;}
@@ -2374,32 +2375,35 @@ init();
 .admin-card-head{display:flex; justify-content:space-between; align-items:center; gap:8px;}
 .admin-actions{background:var(--panel,#FFFAF2); padding:12px 0 4px; border-top:1px solid rgba(46,33,48,.12); margin-top:12px; position:static !important;}
 
-/* --- שורות דביקות (כמו באתר הראשי) --- */
-.admin-shell{padding-top:0 !important;}
-.admin-sticky-head{
-  position:sticky; top:0; z-index:6; margin:0 -18px 10px; padding:14px 18px 12px;
-  background:linear-gradient(180deg, var(--panel,#FFFAF2) 78%, rgba(255,250,242,.92) 100%);
+/* --- מסגרת קבועה: כותרת, טאבים וחיפוש לא זזים בכלל --- */
+.admin-fixed-head{
+  flex:0 0 auto; margin:0 -18px 10px; padding:14px 18px 12px;
+  background:var(--panel,#FFFAF2);
   border-bottom:1px solid rgba(46,33,48,.10);
   border-radius:16px 16px 0 0;
-  backdrop-filter:blur(6px);
 }
-.admin-sticky-head h2{display:flex; align-items:center; gap:9px;}
-.admin-sticky-head h2::before{
+.admin-fixed-head h2{display:flex; align-items:center; gap:9px;}
+.admin-fixed-head h2::before{
   content:''; width:6px; height:22px; border-radius:99px;
   background:linear-gradient(180deg, var(--brass,#E8A33D), var(--olive,#D9603D));
 }
+#adminEditor{flex:1 1 auto; min-height:0; flex-direction:column;}
 .admin-tabs{
-  position:sticky; top:var(--admin-head-h,58px); z-index:5;
-  background:var(--panel,#FFFAF2); padding:8px 0; margin:0 0 12px;
-  box-shadow:0 8px 12px -12px rgba(46,33,48,.5);
+  flex:0 0 auto; background:var(--panel,#FFFAF2); padding:2px 0 8px; margin:0 0 10px;
+  border-bottom:1px solid rgba(46,33,48,.08);
 }
+#adminPanes{flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding-inline-end:2px;}
+.admin-pane.active{display:flex; flex-direction:column;}
 .admin-filter{
   width:100%; padding:10px 13px; border-radius:10px; border:1px solid rgba(46,33,48,.2);
   font-family:inherit; font-size:14px; background:#fff;
-  position:sticky; top:calc(var(--admin-head-h,58px) + var(--admin-tabs-h,46px)); z-index:4;
-  margin:0 0 12px; box-shadow:0 8px 14px -12px rgba(46,33,48,.5);
+  position:sticky; top:0; z-index:3; margin:0 0 12px;
+  box-shadow:0 6px 0 0 var(--panel,#FFFAF2), 0 14px 12px -12px rgba(46,33,48,.35);
 }
 .admin-filter:focus{outline:2px solid var(--brass,#E8A33D); outline-offset:1px;}
+.admin-actions{flex:0 0 auto;}
+.admin-login{overflow-y:auto;}
+.admin-hint.admin-foot-hint{flex:0 0 auto; margin-bottom:12px;}
 
 /* --- ליטוש עיצובי --- */
 .admin-card{transition:box-shadow .18s, transform .18s, border-color .18s;}
@@ -2424,7 +2428,7 @@ init();
 
 <div id="adminOverlay" role="dialog" aria-label="ממשק ניהול">
   <div class="admin-shell">
-    <div class="admin-top admin-sticky-head">
+    <div class="admin-top admin-fixed-head">
       <h2>ממשק ניהול תוכן</h2>
       <div style="display:flex; gap:8px;">
         <button class="admin-btn ghost" id="adminClose">סגירה</button>
@@ -2448,7 +2452,7 @@ init();
           <button class="admin-btn" id="adminSave">שמירה ופרסום</button>
         </div>
       </div>
-      <p class="admin-hint">לאחר שמירה, הקובץ מתעדכן ב-GitHub ו-Vercel מפרסם אוטומטית. ההצגה לכולם מתעדכנת תוך כדקה.</p>
+      <p class="admin-hint admin-foot-hint">לאחר שמירה, הקובץ מתעדכן ב-GitHub ו-Vercel מפרסם אוטומטית. ההצגה לכולם מתעדכנת תוך כדקה.</p>
     </div>
   </div>
 </div>
@@ -2512,7 +2516,7 @@ init();
       passInput.value = '';
       loginMsg.textContent = '';
       loginBox.style.display = 'none';
-      editorBox.style.display = 'block';
+      editorBox.style.display = 'flex';
       await loadData();
     }catch(e){
       loginMsg.className = 'admin-status err';
@@ -2575,11 +2579,9 @@ init();
 
   function syncStickyHeights(){
     const shell = overlay.querySelector('.admin-shell');
-    const head = overlay.querySelector('.admin-sticky-head');
+    const head = overlay.querySelector('.admin-fixed-head');
     if (!shell) return;
-    if (head) shell.style.setProperty('--admin-head-h', head.getBoundingClientRect().height + 'px');
-    const tabsH = tabsEl && tabsEl.offsetParent !== null ? tabsEl.getBoundingClientRect().height : 0;
-    shell.style.setProperty('--admin-tabs-h', tabsH + 'px');
+    void head; void shell; /* המסגרת קבועה — אין צורך במדידות sticky */
   }
   window.addEventListener('resize', syncStickyHeights);
 
