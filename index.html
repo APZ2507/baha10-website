@@ -1175,7 +1175,7 @@ init();
      כדי להוריד מהעומס של הקובץ הזה ולהקל על עריכה נפרדת של כל חלק.
      הפונקציה למטה שולפת כל קובץ בזמן ריצה (fetch), ומזריקה את ה-style/HTML/script שלו לעמוד -
      כולל הרצת ה-script בפועל (דבר שדפדפנים לא עושים אוטומטית עבור script שמוזרק דרך innerHTML,
-     ולכן יוצרים כאן אלמנט <script> חדש במפורש ומצרפים אותו לעמוד).
+     ולכן יוצרים כאן אלמנט תגית script חדש במפורש ומצרפים אותו לעמוד).
      ========================================================================================= -->
 <script>
 async function loadFragment(url){
@@ -1184,8 +1184,15 @@ async function loadFragment(url){
     if(!res.ok) throw new Error(url + ' → ' + res.status);
     const html = await res.text();
 
-    const styleMatch = html.match(/<style>([\s\S]*?)<\/style>/);
-    const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/);
+    // בונים את הביטויים הרגולריים דרך הרכבת מחרוזת, כדי שרצף התווים של תגית style/script הסוגרת
+    // לא יופיע באופן מילולי בקובץ בכלל - זה מונע בלבול של כלים כמו VS Code שמזהים גבולות תגית script
+    // בצורה נאיבית (חיפוש טקסטואלי גרידא) ועלולים לפרש בטעות רצף כזה בתוך קוד כגבול תגית אמיתי.
+    const tag = (name) => ({ open:'<'+name+'>', close:'<'+'/'+name+'>' });
+    const styleTag = tag('style'), scriptTag = tag('script');
+    const styleRe = new RegExp(styleTag.open + '([\\s\\S]*?)' + styleTag.close);
+    const scriptRe = new RegExp(scriptTag.open + '([\\s\\S]*?)' + scriptTag.close);
+    const styleMatch = html.match(styleRe);
+    const scriptMatch = html.match(scriptRe);
     let markup = html;
     if (styleMatch) markup = markup.replace(styleMatch[0], '');
     if (scriptMatch) markup = markup.replace(scriptMatch[0], '');
