@@ -206,30 +206,53 @@
     return tokens(t).some(w => lev(w,k) <= tol || lev(stripAllPrefixes(w),k) <= tol);
   }
 
+  // בודק אם אחת ממילות/ביטויי המפתח מופיעה בטקסט המנורמל. חשוב להשתמש בזה (ולא ב-regex גולמי)
+  // לכל בדיקת מילת-מפתח בעברית, כי norm() ממיר אותיות סופיות (ך/ם/ן/ף/ץ) לצורתן הרגילה בטקסט
+  // הנבדק - ומילת מפתח שנכתבת נכון עם אות סופית (למשל "טלפון", "שלום", "חירום") לעולם לא הייתה
+  // תואמת לטקסט המנורמל אם משווים אותה ישירות ב-regex/includes בלי לעבור גם היא דרך norm().
+  function hasAny(t, words){
+    return words.some(w => t.includes(norm(w)));
+  }
+  // כמו hasAny, אך דורש התאמה מדויקת לכל הטקסט (לא רק תת-מחרוזת) - לברכות כמו "שלום"/"היי" בלבד
+  function isExact(t, words){
+    return words.some(w => t === norm(w));
+  }
+
   // ─── Service finding with expanded aliases ───
 
   const SERVICE_ALIASES = {
     'מרפאה':'clinic','חובש':'clinic','חובשת':'clinic','זריקה':'clinic','חיסון':'clinic',
     'תור רופא':'clinic','רופא':'clinic','מסדר חולים':'clinic','חולה':'clinic','חולים':'clinic',
-    'מדיטיק':'clinic','meditik':'clinic','דלפק קבלה':'clinic',
+    'מדיטיק':'clinic','meditik':'clinic','דלפק קבלה':'clinic','כאב בטן':'clinic','חום':'clinic',
+    'לא מרגיש טוב':'clinic','חולשה':'clinic','מרגיש רע':'clinic','תרופה':'clinic','תרופות':'clinic',
     'שיניים':'dental','שן':'dental','כאב שיניים':'dental','רופא שיניים':'dental','דנטלי':'dental',
+    'סתימה':'dental','עקירה':'dental','חניכיים':'dental',
     'פסיכולוג':'mental-health','פסיכולוגית':'mental-health','בריאות הנפש':'mental-health',
-    'נפשי':'mental-health','טיפול רגשי':'mental-health','ייעוץ':'mental-health',
+    'נפשי':'mental-health','טיפול רגשי':'mental-health','ייעוץ':'mental-health','קצין בריאות הנפש':'mental-health',
+    'קשה לי':'mental-health','לחץ':'mental-health','חרדה':'mental-health','דיכאון':'mental-health','מישהו לדבר איתו':'mental-health',
     'כושר':'gym','חדר כושר':'gym','אימון':'gym','משקולות':'gym','להתאמן':'gym','חדרכושר':'gym',
-    'בריכה':'pool','לשחות':'pool','שחייה':'pool',
+    'ריצה':'gym','מכשירי כושר':'gym','ג׳ים':'gym','ג\'ים':'gym',
+    'בריכה':'pool','לשחות':'pool','שחייה':'pool','בגד ים':'pool',
     'חדר אוכל':'mess-hall','חדראוכל':'mess-hall','קפיטריה':'mess-hall','ארוחה':'mess-hall',
     'ארוחת בוקר':'mess-hall','ארוחת צהריים':'mess-hall','ארוחת ערב':'mess-hall',
-    'לאכול':'mess-hall','רעב':'mess-hall','אוכל':'mess-hall',
-    'בשריה':'meat-kitchen','בשרייה':'meat-kitchen','סטייק':'meat-kitchen',
-    'חלביה':'dairy-kitchen','חלבייה':'dairy-kitchen',
+    'לאכול':'mess-hall','רעב':'mess-hall','אוכל':'mess-hall','חדר אוכל מרכזי':'mess-hall',
+    'בשריה':'meat-kitchen','בשרייה':'meat-kitchen','סטייק':'meat-kitchen','ארוחה בשרית':'meat-kitchen',
+    'חלביה':'dairy-kitchen','חלבייה':'dairy-kitchen','ארוחה חלבית':'dairy-kitchen','גבינה':'dairy-kitchen',
     'שקם':'shekem','קיוסק':'shekem','חנות':'shekem','חטיף':'shekem','לקנות':'shekem','שק"מ':'shekem',
+    'חטיפים':'shekem','ממתקים':'shekem','שתייה':'shekem','קניות':'shekem','לקניות':'shekem',
     'משרד רישום':'adjutancy','רישום':'adjutancy','שלישות':'adjutancy','כוח אדם':'adjutancy',
-    'רישום בסיסי':'adjutancy','אבנט':'adjutancy',
+    'רישום בסיסי':'adjutancy','אבנט':'adjutancy','תעודת חוגר':'adjutancy','אישור':'adjutancy',
+    'אישורים':'adjutancy','תלוש':'adjutancy','משכורת':'adjutancy','חופשה':'adjutancy','ימי מחלה':'adjutancy',
     'אפסנאות':'quartermaster','ציוד':'quartermaster','מדים':'quartermaster',
+    'ציוד אישי':'quartermaster','ביגוד':'quartermaster','נעליים':'quartermaster',
     'נשקייה':'armory','נשק':'armory','טופס נשק':'armory','אקדח':'armory','רובה':'armory',
+    'להחזיר נשק':'armory','להוציא נשק':'armory','תחמושת':'armory',
     'בית כנסת':'synagogue','בית הכנסת':'synagogue','תפילה':'synagogue','תפילות':'synagogue',
     'חג':'synagogue','שחרית':'synagogue','מנחה':'synagogue','ערבית':'synagogue',
-    'שבת':'synagogue','קבלת שבת':'synagogue','הבדלה':'synagogue'
+    'שבת':'synagogue','קבלת שבת':'synagogue','הבדלה':'synagogue','רב':'synagogue','רבנות':'synagogue',
+    'סידור':'synagogue','טלית':'synagogue','תפילין':'synagogue','כיפור':'synagogue','סוכות':'synagogue',
+    'פסח':'synagogue','שבועות':'synagogue','ראש השנה':'synagogue','מגילה':'synagogue','חנוכה':'synagogue',
+    'פורים':'synagogue','ט"ו בשבט':'synagogue','יום כיפור':'synagogue'
   };
 
   function findService(text){
@@ -276,9 +299,14 @@
   }
 
   function dayInText(text){
-    const t = norm(text);
-    if(/\bהיום\b/.test(t)) return new Date().getDay();
-    if(/\bמחר\b/.test(t)) return (new Date().getDay()+1)%7;
+    // שימוש ב-\b לא עובד כאן בכוונה - גבולות מילה ב-JS מוגדרים לפי \w (אותיות לטיניות בלבד),
+    // ואותיות עבריות לא נחשבות \w, כך שההשוואה מעולם לא הצליחה לזהות "מחר"/"היום" בטקסט עברי.
+    // הפתרון: מרפדים ברווחים ובודקים כתת-מחרוזת שלמה בין רווחים - וגם מנרמלים את מילות ההשוואה עצמן
+    // (norm), כי גם הן עלולות להסתיים באות סופית (כמו "מחרתיים" שמסתיים ב-ם).
+    const t = ' ' + norm(text) + ' ';
+    if(t.includes(' '+norm('מחרתיים')+' ')) return (new Date().getDay()+2)%7;
+    if(t.includes(' '+norm('מחר')+' ')) return (new Date().getDay()+1)%7;
+    if(t.includes(' '+norm('היום')+' ')) return new Date().getDay();
     const i = DAYS.findIndex(d=>t.includes(norm(d)));
     return i>=0 ? i : null;
   }
@@ -602,7 +630,7 @@
 
   function answerPhone(text){
     const t = norm(text);
-    const phoneKeywords = ['טלפון','מספר','התקשר','להתקשר','לחייג','חייג','טל','פלאפון','נייד','לצלצל'];
+    const phoneKeywords = ['טלפון','מספר','התקשר','להתקשר','לחייג','חייג','טל','פלאפון','נייד','לצלצל','ליצור קשר','יצירת קשר'];
     const hasKeyword = phoneKeywords.some(kw=>kwMatch(t,kw));
     if(!hasKeyword) return false;
 
@@ -625,7 +653,7 @@
 
   function answerPhoneByServiceName(text){
     const t = norm(text);
-    const phoneKeywords = ['טלפון','מספר','התקשר','להתקשר','לחייג'];
+    const phoneKeywords = ['טלפון','מספר','התקשר','להתקשר','לחייג','ליצור קשר','יצירת קשר'];
     if(!phoneKeywords.some(kw=>kwMatch(t,kw))) return false;
     const svc = findService(text);
     if(!svc) return false;
@@ -657,7 +685,7 @@
 
   function answerShuttle(text){
     const t = norm(text);
-    const hasKeyword = /שאטל|הסעה|הסעות|הביתה|בייתה|לבית/.test(t);
+    const hasKeyword = hasAny(t, ['שאטל','הסעה','הסעות','הביתה','בייתה','לבית']);
     const cities = shuttleCities();
     const matchedCities = cities.filter(c=>kwMatch(t,c));
     if(!hasKeyword && !matchedCities.length) return false;
@@ -688,7 +716,7 @@
 
   function answerTransport(text){
     const t = norm(text);
-    if(!/392|אגד|תחבורה ציבורית|איך מגיעים|להגיע לבסיס|דרכי הגעה/.test(t)) return false;
+    if(!hasAny(t, ['392','אגד','תחבורה ציבורית','איך מגיעים','להגיע לבסיס','דרכי הגעה'])) return false;
     const tr = DATA.transportInfo; if(!tr) return false;
     let html = `<b>🚌 ${tr.title}</b><div style="margin-top:6px;font-size:13px">${(tr.body||[]).join('<br>')}</div>`;
     if(tr.videoUrl) html += `<div style="margin-top:6px">🎬 <a href="${tr.videoUrl}" style="color:#D9603D;font-weight:600">${tr.videoCaption||'סרטון הדרכה'}</a></div>`;
@@ -719,7 +747,7 @@
     for(const stop of allStops){
       if(kwMatch(t, stop)){ dest = stop; break; }
     }
-    if(!dest && /קו 10|אוטובוס פנימי|הסעה פנימית/.test(t)){
+    if(!dest && hasAny(t, ['קו 10','אוטובוס פנימי','הסעה פנימית'])){
       showBusMenu();
       return true;
     }
@@ -785,20 +813,31 @@
       }
     }
 
+    // TRIGGERS ממופים לפי "רמז כותרת" (מילה/ביטוי שאמור להופיע בכותרת הנושא), לא לפי אינדקס קבוע -
+    // כך שגם אם מוסיפים/מוחקים/מסדרים מחדש נושאי נהלים דרך לוח הניהול, ההפניה עדיין תמצא את הנושא הנכון.
     const TRIGGERS = {
-      'צילום':0, 'לצלם':0, 'מצלמה':0,
-      'אבטחת מידע':0, 'מסמך':0, 'רגיש':0, 'כספת':0, 'אבטחה':0,
-      'חגורה':1, 'בטיחות':1, 'מפגע':1, 'רמזור':1, 'מסלול':1, 'תקלה':1,
-      'ספיגה':2, 'התרעה':2, 'מרחב מוגן':2, 'אזעקה':2, 'מקלט':2, 'טיל':2
+      'צילום':'אבטחת מידע', 'לצלם':'אבטחת מידע', 'מצלמה':'אבטחת מידע', 'טלפון נייד באזור':'אבטחת מידע',
+      'אבטחת מידע':'אבטחת מידע', 'מסמך':'אבטחת מידע', 'מסמכים':'אבטחת מידע', 'רגיש':'אבטחת מידע',
+      'מידע רגיש':'אבטחת מידע', 'כספת':'אבטחת מידע', 'אבטחה':'אבטחת מידע', 'סיווג':'אבטחת מידע', 'הדלפה':'אבטחת מידע',
+
+      'חגורה':'בטיחות', 'בטיחות':'בטיחות', 'מפגע':'בטיחות', 'רמזור':'בטיחות', 'מסלול':'בטיחות',
+      'תקלה':'בטיחות', 'תאונה':'בטיחות', 'תאונת עבודה':'בטיחות', 'ציוד מגן':'בטיחות', 'קסדה':'בטיחות',
+
+      'ספיגה':'ספיגה', 'התרעה':'ספיגה', 'התראה':'ספיגה', 'התרעות':'ספיגה', 'התראות':'ספיגה',
+      'מרחב מוגן':'ספיגה', 'ממ"ד':'ספיגה', 'ממד':'ספיגה', 'מקלט':'ספיגה', 'מקלטים':'ספיגה',
+      'אזעקה':'ספיגה', 'אזעקות':'ספיגה', 'צופר':'ספיגה', 'סירנה':'ספיגה',
+      'טיל':'ספיגה', 'טילים':'ספיגה', 'רקטה':'ספיגה', 'רקטות':'ספיגה', 'ירי':'ספיגה', 'ירי רקטות':'ספיגה',
+      'צבע אדום':'ספיגה', 'צבע אדום אדום':'ספיגה', 'אדום אדום':'ספיגה', 'התרעת צבע אדום':'ספיגה',
+      'חדירה':'ספיגה', 'חדירת מחבלים':'ספיגה', 'פיצוץ':'ספיגה'
     };
-    for(const [kw, idx] of Object.entries(TRIGGERS)){
-      if(kwMatch(t, kw) && g[idx]){
-        showGuidelineTopic(idx);
-        return true;
+    for(const [kw, topicHint] of Object.entries(TRIGGERS)){
+      if(kwMatch(t, kw)){
+        const idx = g.findIndex(topic => kwMatch(norm(topic.title), topicHint) || norm(topic.title).includes(norm(topicHint)));
+        if(idx>=0){ showGuidelineTopic(idx); return true; }
       }
     }
 
-    if(/נוהל|נהלי|נהלים|הנחיה|הנחיות|דגש|דגשים/.test(t)){
+    if(hasAny(t, ['נוהל','נהלי','נהלים','הנחיה','הנחיות','דגש','דגשים'])){
       showGuidelinesMenu();
       return true;
     }
@@ -807,14 +846,14 @@
 
   function answerAbsorption(text){
     const t = norm(text);
-    if(!/קליטה|קליט|מתגייס|גיוס|חדש בבסיס|הגעתי לבסיס|מגיע לבסיס|לומדות|שומר סף|ראיון אישי|שיבוץ/.test(t)) return false;
+    if(!hasAny(t, ['קליטה','קליט','מתגייס','גיוס','חדש בבסיס','הגעתי לבסיס','מגיע לבסיס','לומדות','שומר סף','ראיון אישי','שיבוץ'])) return false;
     showAbsorption();
     return true;
   }
 
   function answerWhatsApp(text){
     const t = norm(text);
-    if(!/וואטסאפ|ווצאפ|whatsapp|קבוצה|קבוצת/.test(t)) return false;
+    if(!hasAny(t, ['וואטסאפ','ווצאפ','whatsapp','קבוצה','קבוצת'])) return false;
     const svc = findService(text);
     if(svc){
       const [key, s] = svc;
@@ -847,7 +886,7 @@
 
   function answerVideo(text){
     const t = norm(text);
-    if(!/סרטון|הדרכה|וידאו|video|הסבר/.test(t)) return false;
+    if(!hasAny(t, ['סרטון','הדרכה','וידאו','video','הסבר'])) return false;
     const svc = findService(text);
     if(svc){
       const [key, s] = svc;
@@ -881,7 +920,7 @@
 
   function answerWhatIs(text){
     const t = norm(text);
-    if(!/מה זה|מהו|מהי|מה הם|ספר לי על|תסביר|מידע על|פרטים על/.test(t)) return false;
+    if(!hasAny(t, ['מה זה','מהו','מהי','מה הם','ספר לי על','תסביר','מידע על','פרטים על'])) return false;
     const svc = findService(text);
     if(svc){
       const [key, s] = svc;
@@ -907,7 +946,7 @@
 
   function answerBookAppointment(text){
     const t = norm(text);
-    if(!/תור|לקבוע|להזמין תור|איך מזמינים|הזמנת תור|מדיטיק/.test(t)) return false;
+    if(!hasAny(t, ['תור','לקבוע','להזמין תור','איך מזמינים','הזמנת תור','מדיטיק'])) return false;
     const clinic = DATA.services['clinic'];
     if(!clinic) return false;
     let html = '<b>⚕ הזמנת תור למרפאה</b><br>';
@@ -924,7 +963,7 @@
 
   function answerEmergency(text){
     const t = norm(text);
-    if(!/חירום|דחוף|פציעה|נפגע|מקרה חירום|עזרה ראשונה|אמבולנס/.test(t)) return false;
+    if(!hasAny(t, ['חירום','דחוף','פציעה','נפגע','מקרה חירום','עזרה ראשונה','אמבולנס'])) return false;
     const emergency = DATA.phones.filter(p=>
       /חירום|24\/7|מושל|חמ.ל/.test(p.role) || /מושל|חמ.ל/.test(p.name)
     );
@@ -945,13 +984,13 @@
   }
 
   const CATEGORY_KEYWORDS = {
-    health: ['בריאות','רפואה','רופא','אחות','חולה','כואב','רפואי'],
-    food: ['אוכל','רעב','ארוחה','לאכול','מזון','מטבח'],
-    logistics: ['ציוד','לוגיסטיקה','אספקה'],
-    manpower: ['כוח אדם','פרטים','אדמיניסטרציה','אדמין'],
-    sport: ['ספורט','פעילות גופנית'],
-    prayers: ['תפילה','דת','בית כנסת','חג','דתי'],
-    transport: ['תחבורה','נסיעה','הסעות','אוטובוס','הגעה']
+    health: ['בריאות','רפואה','רופא','אחות','חולה','כואב','רפואי','מרפאה','טיפול רפואי','חולים'],
+    food: ['אוכל','רעב','ארוחה','לאכול','מזון','מטבח','להזמין אוכל','צהריים','ארוחות'],
+    logistics: ['ציוד','לוגיסטיקה','אספקה','ציוד אישי','מדים'],
+    manpower: ['כוח אדם','פרטים','אדמיניסטרציה','אדמין','מנהלה','שלישות','ניירת'],
+    sport: ['ספורט','פעילות גופנית','אימונים','להתעמל'],
+    prayers: ['תפילה','דת','בית כנסת','חג','דתי','חגים','מועדים'],
+    transport: ['תחבורה','נסיעה','הסעות','אוטובוס','הגעה','לנסוע','לחזור הביתה']
   };
 
   function answerCategoryKeyword(text){
@@ -976,28 +1015,35 @@
     const t = norm(text);
 
     // Greetings
-    if(/^(שלום|היי|הי|hello|hi|בוקר טוב|ערב טוב|לילה טוב|מה נשמע|מה קורה|אהלן)$/i.test(t)){
+    if(isExact(t, ['שלום','היי','הי','hello','hi','בוקר טוב','ערב טוב','לילה טוב','מה נשמע','מה קורה','אהלן'])){
       addMsg('שלום! 👋 במה אפשר לעזור?');
       greet();
       return;
     }
 
     // Thanks / menu / help
-    if(/^(תודה|תודה רבה|מרסי|thanks|thank you)$/i.test(t)){
+    if(isExact(t, ['תודה','תודה רבה','מרסי','thanks','thank you'])){
       addMsg('בשמחה! 😊 אם יש עוד שאלות — אני כאן.');
       addChips([{label:'🏠 תפריט ראשי',back:true,action:greet}]);
       return;
     }
-    if(/תפריט|עזרה|^help$/i.test(t)){ return greet(); }
+    if(hasAny(t, ['תפריט','עזרה']) || t==='help'){ return greet(); }
 
     // Emergency — top priority
     if(answerEmergency(text)) return;
 
+    // Phone requests — נבדק לפני שאלות תחבורה/קו 10, כי "טלפון של X" חייב לנצח התאמת שם תחנה
+    // (למשל "טלפון של מושל"ם" לא אמור להיחטף על ידי מסלול קו 10 שעובר במושל"ם)
+    if(hasAny(t, ['טלפון','מספר','התקשר','להתקשר','לחייג','חייג','פלאפון','נייד','לצלצל','ליצור קשר','יצירת קשר'])){
+      if(answerPhoneByServiceName(text)) return;
+      if(answerPhone(text)) return;
+    }
+
     // "What's open now"
-    if(/מה פתוח|מי פתוח|משהו פתוח/.test(t)) return showOpenNow();
+    if(hasAny(t, ['מה פתוח','מי פתוח','משהו פתוח'])) return showOpenNow();
 
     // "What's open on [day]"
-    if(/מה פתוח|מי פתוח|משהו פתוח/.test(t) || (/פתוח/.test(t) && dayInText(text)!==null && !findService(text))){
+    if(hasAny(t, ['מה פתוח','מי פתוח','משהו פתוח']) || (t.includes('פתוח') && dayInText(text)!==null && !findService(text))){
       if(answerOpenOnDay(text)) return;
     }
 
@@ -1012,7 +1058,7 @@
 
     // Internal bus
     if(answerBusQuestion(text)) return;
-    if(/קו 10|אוטובוס פנימי|הסעה פנימית|רחבת היסעים/.test(t)){
+    if(hasAny(t, ['קו 10','אוטובוס פנימי','הסעה פנימית','רחבת היסעים'])){
       showBusMenu();
       return;
     }
@@ -1021,13 +1067,13 @@
     const svc = findService(text);
 
     // "Until when is X open?"
-    if(svc && /עד מתי|עד כמה|עד איזה שעה/.test(t)){
+    if(svc && hasAny(t, ['עד מתי','עד כמה','עד איזה שעה'])){
       answerUntilWhen(text, svc);
       return;
     }
 
     // "When does X open?"
-    if(svc && /מתי נפתח|מתי פותח|מתי יפתח|מתי ייפתח|מתי פתוח/.test(t)){
+    if(svc && hasAny(t, ['מתי נפתח','מתי פותח','מתי יפתח','מתי ייפתח','מתי פתוח'])){
       const day = dayInText(text);
       if(day!==null){
         showServiceDay(svc[0], day);
@@ -1038,7 +1084,7 @@
     }
 
     // "Is X open?"
-    if(svc && /פתוח|פתוחה|סגור|סגורה|עובד|עובדת|פועל|פועלת/.test(t)){
+    if(svc && hasAny(t, ['פתוח','פתוחה','סגור','סגורה','עובד','עובדת','פועל','פועלת'])){
       const day = dayInText(text);
       if(day!==null){
         showServiceDay(svc[0], day);
@@ -1065,10 +1111,6 @@
       return;
     }
 
-    // Phone queries
-    if(answerPhoneByServiceName(text)) return;
-    if(answerPhone(text)) return;
-
     // WhatsApp groups
     if(answerWhatsApp(text)) return;
 
@@ -1091,7 +1133,7 @@
     if(answerCategoryKeyword(text)) return;
 
     // General transport
-    if(/תחבורה|לנסוע|נסיעה|אוטובוס|להגיע/.test(t)){
+    if(hasAny(t, ['תחבורה','לנסוע','נסיעה','אוטובוס','להגיע'])){
       showBusMenu();
       return;
     }
