@@ -781,7 +781,32 @@ function renderWaBubble(url, label){
   </a>`;
 }
 
+function isInfoOnlyService(service){
+  // כרטיס "מידע בלבד" (בלי שעות פעילות בכלל) - למשל הפניה למשאב חיצוני שזמין תמיד.
+  // בשלב הזה service.hours[יום] הוא כבר מערך מפוענח של חלונות זמן (לא מחרוזת גולמית) -
+  // אם כל 7 הימים הם מערך ריק, לא מציגים חותמת פתוח/סגור וטבלת שעות מיותרת.
+  return Object.values(service.hours || {}).every(h => !h || h.length === 0);
+}
+
 function renderServiceCard(service, date){
+  if (isInfoOnlyService(service)){
+    return `
+    <div class="card" id="svc-${service.id}" data-cat="${service.category}" data-name="${service.name}">
+      <div class="card-top">
+        <div class="card-id">
+          <div class="icon-badge">${service.icon}</div>
+          <div>
+            <h3>${service.name}</h3>
+            <div class="cat-tag">${CATEGORIES.find(c=>c.id===service.category).name}</div>
+          </div>
+        </div>
+      </div>
+      ${service.note ? `<div class="status-line">${service.note}</div>` : ''}
+      ${service.videoUrl !== undefined ? `<div class="video-section">${renderVideoBlock(service.videoUrl, service.videoCaption)}</div>` : ''}
+      ${service.waGroupUrl ? renderWaBubble(service.waGroupUrl, service.waGroupLabel) : ''}
+    </div>`;
+  }
+
   const status = getStatus(service, date);
   const todayIdx = date.getDay();
   let statusLine = '';

@@ -219,6 +219,25 @@
       "waGroupUrl": "",
       "waGroupLabel": ""
     },
+    "reserves": {
+      "name": "מילואים",
+      "category": "manpower",
+      "icon": "🎖",
+      "hours": {
+        "0": "",
+        "1": "",
+        "2": "",
+        "3": "",
+        "4": "",
+        "5": "",
+        "6": ""
+      },
+      "note": "משרתי מילואים יקרים, לקבלת מידע על הזכויות וההטבות שלכם ושלל נושאים, היעזרו בבוט \"מילי\" בקישור שלהלן: <a href=\"https://miluim-chat-buddy.lovable.app/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#0000ee;text-decoration:underline;\">מילי - בוט המילואים</a>",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "",
+      "waGroupLabel": "לעדכונים נוספים הצטרפו לקבוצה"
+    },
     "armory": {
       "name": "נשקייה",
       "category": "logistics",
