@@ -982,16 +982,19 @@ let activeCat = 'all';
 function renderCats(){
   const counts = {};
   LIVE_SERVICES.forEach(s => counts[s.category] = (counts[s.category]||0)+1);
-  const transportCount = 1 + LIVE_SHUTTLES.length + 1; // קו 10 + שאטלים + עלון מידע
+  // כרטיסי התחבורה המיוחדים (קו 10, שאטלים, עלון קו 392) תמיד נספרים כ-3 כרטיסים בדיוק,
+  // גם אם יש הרבה שאטלים ברשימה - כי הם כולם מוצגים כרטיס אחד מרוכז, לא כרטיס לכל שאטל.
+  // קבוע יחיד כאן במקום נוסחה, כדי שהמספר לא יתפספס אם יתווספו/יוסרו כרטיסים מיוחדים בעתיד.
+  const TRANSPORT_EXTRA_CARDS = 3; // בוס קו 10 + שאטלים + עלון קו 392
   const onboardingCount = LIVE_ABSORPTION_STEPS.length; // תהליך קליטה - רובריקה נפרדת, לא נספרת תחת "הכל"
   const guidelinesCount = LIVE_GUIDELINES.length; // דגשים ונהלים - רובריקה נפרדת, לא נספרת תחת "הכל"
 
   const items = [
-    { id:'all', name:'כל השירותים', icon:'🗂', count: LIVE_SERVICES.length + 1 }, // שירותים + קו 10 בלבד
+    { id:'all', name:'כל השירותים', icon:'🗂', count: LIVE_SERVICES.length + TRANSPORT_EXTRA_CARDS }, // שירותים + כרטיסי תחבורה המיוחדים
     { id:'phones', name:'טלפונים', icon:'📞', count: LIVE_PHONES.length },
     ...CATEGORIES.map(c => ({
       ...c,
-      count: c.id==='transport' ? transportCount : c.id==='onboarding' ? onboardingCount : c.id==='guidelines' ? guidelinesCount : (counts[c.id]||0)
+      count: c.id==='transport' ? TRANSPORT_EXTRA_CARDS : c.id==='onboarding' ? onboardingCount : c.id==='guidelines' ? guidelinesCount : (counts[c.id]||0)
     }))
   ];
 
