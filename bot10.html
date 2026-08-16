@@ -415,23 +415,34 @@
     if(!svcs.length){ addMsg('אין שירותים בקטגוריה זו.'); return; }
     addMsg('שירותים בקטגוריית <b>'+CATEGORIES[cat].label+'</b>:');
     const chips = svcs.map(([k,s])=>({
-      label: s.icon+' '+s.name+(isOpenNow(s.hours)?' 🟢':' 🔴'),
+      label: s.icon+' '+s.name+(isInfoOnlyService(s) ? '' : (isOpenNow(s.hours)?' 🟢':' 🔴')),
       action: ()=>showService(k)
     }));
     chips.push({label:'↩ לקטגוריות',back:true,action:showCategories});
     addChips(chips);
   }
 
+  function isInfoOnlyService(s){
+    // כרטיס "מידע בלבד" בלי שעות פעילות בכלל (למשל הפניה למשאב חיצוני שזמין תמיד) -
+    // לא מציגים חותמת פתוח/סגור וטבלת שעות מיותרת, רק את ההערה והקישורים.
+    return Object.values(s.hours||{}).every(h => !h || !String(h).trim());
+  }
+
   function showService(key){
     const s = DATA.services[key]; if(!s) return;
-    const open = isOpenNow(s.hours);
-    const today = DAYS[new Date().getDay()];
-    const todayHours = s.hours[new Date().getDay()] || 'סגור';
-    const change = nextChange(s);
-    let html = `<b>${s.icon} ${s.name}</b> <span class="cb-status ${open?'open':'closed'}">${open?'פתוח כעת':'סגור כעת'}</span>`;
-    html += `<div style="margin-top:4px;font-size:13px;color:#6B4C7A">${change.text}</div>`;
-    html += `<div style="margin-top:6px"><b>היום (${today}):</b> ${todayHours||'סגור'}</div>`;
-    html += `<div style="margin-top:8px;padding-top:6px;border-top:1px dashed #EED2B8"><b>שעות שבועיות:</b><div style="font-size:13px;margin-top:4px">${fmtHours(s.hours)}</div></div>`;
+    let html;
+    if (isInfoOnlyService(s)){
+      html = `<b>${s.icon} ${s.name}</b>`;
+    } else {
+      const open = isOpenNow(s.hours);
+      const today = DAYS[new Date().getDay()];
+      const todayHours = s.hours[new Date().getDay()] || 'סגור';
+      const change = nextChange(s);
+      html = `<b>${s.icon} ${s.name}</b> <span class="cb-status ${open?'open':'closed'}">${open?'פתוח כעת':'סגור כעת'}</span>`;
+      html += `<div style="margin-top:4px;font-size:13px;color:#6B4C7A">${change.text}</div>`;
+      html += `<div style="margin-top:6px"><b>היום (${today}):</b> ${todayHours||'סגור'}</div>`;
+      html += `<div style="margin-top:8px;padding-top:6px;border-top:1px dashed #EED2B8"><b>שעות שבועיות:</b><div style="font-size:13px;margin-top:4px">${fmtHours(s.hours)}</div></div>`;
+    }
     if(s.note) html += `<div style="margin-top:8px;padding:6px 8px;background:#FBF3E7;border-radius:8px;font-size:13px">💡 ${s.note}</div>`;
     if(s.videoUrl) html += `<div style="margin-top:6px;font-size:13px">🎬 <a href="${s.videoUrl}" style="color:#D9603D;font-weight:600">צפו בסרטון הדרכה</a> — ${s.videoCaption||''}</div>`;
     if(s.waGroupUrl) html += `<div style="margin-top:4px;font-size:13px">📱 <a href="${s.waGroupUrl}" target="_blank" style="color:#D9603D;font-weight:600">${s.waGroupLabel||'קבוצת וואטסאפ'}</a></div>`;
@@ -444,6 +455,7 @@
 
   function showServiceDay(key, day){
     const s = DATA.services[key]; if(!s) return;
+    if (isInfoOnlyService(s)){ showService(key); return; } // אין ימים/שעות למשאב הזה - פשוט מציגים את הכרטיס הרגיל
     const raw = s.hours[day]||'';
     const ranges = parseRanges(raw);
     let html = `<b>${s.icon} ${s.name}</b> — יום <b>${DAYS[day]}</b>:<br>`;
