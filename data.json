@@ -275,6 +275,25 @@
       "videoCaption": "",
       "waGroupUrl": "",
       "waGroupLabel": ""
+    },
+    "club": {
+      "name": "מועדון",
+      "category": "sport",
+      "icon": "🎶",
+      "hours": {
+        "0": "",
+        "1": "18:30-22:00",
+        "2": "",
+        "3": "18:30-22:00",
+        "4": "",
+        "5": "",
+        "6": ""
+      },
+      "note": "מועדון לחייל וחדר מוזיקה\nלנהלי השימוש במועדון- <a href=\"https://drive.google.com/file/d/1Js8C4ow9lcgIrHQEkvRCf6iQ67-5zIXx/view?usp=drivesdk\">קישור לנהלים</a>\n",
+      "videoUrl": "",
+      "videoCaption": "",
+      "waGroupUrl": "https://chat.whatsapp.com/F5nLNkOnOi4KietN2PnOO2",
+      "waGroupLabel": "לעדכונים הצטרפו לקבוצת הווצאפ של המועדון"
     }
   },
   "phones": [
