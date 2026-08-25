@@ -206,6 +206,27 @@
     return tokens(t).some(w => lev(w,k) <= tol || lev(stripAllPrefixes(w),k) <= tol);
   }
 
+  // כמו kwMatch, אבל מחזיר ציון (0 = התאמה מדויקת, גבוה יותר = פחות טוב, Infinity = אין התאמה כלל) -
+  // כדי לאפשר להשוות בין כמה מועמדים ולבחור את הכי טוב, במקום לעצור על ההתאמה המטושטשת הראשונה שנמצאת.
+  // זה קריטי כשיש כמה שירותים/מילות מפתח: בלי ציון, "בריכה" יכול "להיתפס" בטעות על ידי "בשרייה"
+  // (מרחק עריכה קטן ביניהן) רק כי בשרייה מופיעה קודם ברשימת השירותים, למרות ש"בריכה" תואמת בדיוק לשירות אחר.
+  function kwMatchScore(text, kw){
+    const t = norm(text), k = norm(kw);
+    if(!k) return Infinity;
+    if(t.includes(k)) return 0;
+    if(k.includes(' ')){
+      const parts = k.split(' ');
+      return parts.every(p => t.includes(p)) ? 0.5 : Infinity;
+    }
+    if(k.length < 3) return t.split(' ').includes(k) ? 0 : Infinity;
+    const tol = k.length >= 6 ? 2 : 1;
+    let best = Infinity;
+    tokens(t).forEach(w=>{
+      best = Math.min(best, lev(w,k), lev(stripAllPrefixes(w),k));
+    });
+    return best <= tol ? best + 1 : Infinity; // +1 כך שכל התאמה מטושטשת (אפילו עם מרחק 0) גרועה יותר מהתאמה מדויקת
+  }
+
   // בודק אם אחת ממילות/ביטויי המפתח מופיעה בטקסט המנורמל. חשוב להשתמש בזה (ולא ב-regex גולמי)
   // לכל בדיקת מילת-מפתח בעברית, כי norm() ממיר אותיות סופיות (ך/ם/ן/ף/ץ) לצורתן הרגילה בטקסט
   // הנבדק - ומילת מפתח שנכתבת נכון עם אות סופית (למשל "טלפון", "שלום", "חירום") לעולם לא הייתה
@@ -259,14 +280,17 @@
 
   function findService(text){
     const t = norm(text);
+    let best = null, bestScore = Infinity;
     for(const [k,s] of Object.entries(DATA.services)){
-      if([s.name,k].some(n=>kwMatch(t,n))) return [k,s];
+      const score = Math.min(kwMatchScore(t, s.name), kwMatchScore(t, k));
+      if(score < bestScore){ bestScore = score; best = [k,s]; }
     }
-    const sorted = Object.entries(SERVICE_ALIASES).sort((a,b)=>b[0].length-a[0].length);
-    for(const [a,k] of sorted){
-      if(kwMatch(t,a) && DATA.services[k]) return [k,DATA.services[k]];
+    for(const [a,k] of Object.entries(SERVICE_ALIASES)){
+      if(!DATA.services[k]) continue;
+      const score = kwMatchScore(t, a);
+      if(score < bestScore){ bestScore = score; best = [k, DATA.services[k]]; }
     }
-    return null;
+    return bestScore === Infinity ? null : best;
   }
 
   function suggestServices(text){
@@ -411,6 +435,19 @@
   }
 
   function showCategory(cat){
+    if(cat === 'transport'){
+      // לקטגוריית תחבורה אין "שירותים" ברשימת DATA.services בכלל - קו 10, שאטלים ומידע 392
+      // חיים במבנים נפרדים. לכן מציגים תפריט ייעודי במקום לנסות (ולהיכשל) לרשום שירותים.
+      addMsg('<b>🚌 תחבורה</b><br>איזה מידע תרצו?');
+      const chips = [
+        {label:'🚌 קו 10 (הסעות פנימיות)',action:showBusMenu},
+        {label:'🚐 שאטלים לערים',action:showShuttles},
+      ];
+      if(DATA.transportInfo) chips.push({label:'🚍 תחבורה ציבורית (קו 392)',action:showTransportInfo});
+      chips.push({label:'↩ לקטגוריות',back:true,action:showCategories});
+      addChips(chips);
+      return;
+    }
     const svcs = Object.entries(DATA.services).filter(([,s])=>s.category===cat);
     if(!svcs.length){ addMsg('אין שירותים בקטגוריה זו.'); return; }
     addMsg('שירותים בקטגוריית <b>'+CATEGORIES[cat].label+'</b>:');
@@ -728,15 +765,20 @@
     return true;
   }
 
-  function answerTransport(text){
-    const t = norm(text);
-    if(!hasAny(t, ['392','אגד','תחבורה ציבורית','איך מגיעים','להגיע לבסיס','דרכי הגעה'])) return false;
-    const tr = DATA.transportInfo; if(!tr) return false;
+  function showTransportInfo(){
+    const tr = DATA.transportInfo; if(!tr) return;
     let html = `<b>🚌 ${tr.title}</b><div style="margin-top:6px;font-size:13px">${(tr.body||[]).join('<br>')}</div>`;
     if(tr.videoUrl) html += `<div style="margin-top:6px">🎬 <a href="${tr.videoUrl}" style="color:#D9603D;font-weight:600">${tr.videoCaption||'סרטון הדרכה'}</a></div>`;
     if(tr.linkUrl) html += `<div style="margin-top:4px">🔗 <a href="${tr.linkUrl}" target="_blank" style="color:#D9603D;font-weight:600">${tr.linkLabel||'קישור'}</a></div>`;
     addMsg(html);
     addChips([{label:'🏠 תפריט ראשי',back:true,action:greet}]);
+  }
+
+  function answerTransport(text){
+    const t = norm(text);
+    if(!hasAny(t, ['392','אגד','תחבורה ציבורית','איך מגיעים','להגיע לבסיס','דרכי הגעה'])) return false;
+    if(!DATA.transportInfo) return false;
+    showTransportInfo();
     return true;
   }
 
