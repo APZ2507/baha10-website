@@ -799,9 +799,13 @@
     DATA.busRoutes.forEach(r=>{
       r.stops.split('←').forEach(s=>{ const trimmed = s.trim(); if(trimmed) allStops.add(trimmed); });
     });
-    let dest = null;
+    // בוחרים את התחנה הכי טובה שמתאימה (לא הראשונה שנמצאת), ודורשים התאמה הדוקה יחסית -
+    // כי שם תחנה מושווה מול טקסט חופשי לגמרי, וסובלנות גדולה מדי (מרחק עריכה 2+) גורמת
+    // לשאלות לא קשורות בעליל (למשל "תפילות") להיחטף בטעות על ידי תחנה דומה במקרה ("תובלות").
+    let dest = null, bestScore = Infinity;
     for(const stop of allStops){
-      if(kwMatch(t, stop)){ dest = stop; break; }
+      const score = kwMatchScore(t, stop);
+      if(score < bestScore && score <= 2){ bestScore = score; dest = stop; }
     }
     if(!dest && hasAny(t, ['קו 10','אוטובוס פנימי','הסעה פנימית'])){
       showBusMenu();
