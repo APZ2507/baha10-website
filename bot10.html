@@ -160,10 +160,14 @@
   }
 
   function stripAllPrefixes(w){
+    // מקסימום 2 סבבים (לא 3) - צירוף של 3 אותיות יחיד תחיליות עברית ("וכשה" וכו') נדיר מאוד
+    // בפועל, ואילו 3 סבבים מאפשרים למחרוזת "לאכול" חלק מהשורש האמיתי של מילה (לא רק תחיליות
+    // דקדוקיות אמיתיות) - למשל "המושלם" נשחק עד "שלמ", שבמקרה קרובה מדי למילים לא קשורות.
+    // גם דורשים שיישארו לפחות 3 תווים - שיירית קצרה יותר לא אמינה להשוואה בכלל.
     let out = w;
-    for(let i=0; i<3 && out.length>2; i++){
+    for(let i=0; i<2 && out.length>3; i++){
       const next = stripPrefix(out);
-      if(next === out) break;
+      if(next === out || next.length < 3) break;
       out = next;
     }
     return out;
@@ -685,8 +689,10 @@
     const hasKeyword = phoneKeywords.some(kw=>kwMatch(t,kw));
     if(!hasKeyword) return false;
 
+    // דורשים התאמה הדוקה (מדויקת או כמעט מדויקת) לשם/תפקיד איש הקשר - לא כל התאמה מטושטשת רופפת,
+    // כדי שמילים לא קשורות בעליל (כמו "מושלם" מול "שק\"ם") לא "יתפסו" איש קשר בטעות.
     const results = DATA.phones.filter(p=>{
-      return kwMatch(t, p.name) || kwMatch(t, p.role);
+      return kwMatchScore(t, p.name) <= 2 || kwMatchScore(t, p.role) <= 2;
     });
 
     if(results.length){
@@ -710,7 +716,7 @@
     if(!svc) return false;
     const [key, s] = svc;
     const phoneName = norm(s.name);
-    const match = DATA.phones.filter(p=>kwMatch(norm(p.name), phoneName) || kwMatch(phoneName, norm(p.name)));
+    const match = DATA.phones.filter(p=>kwMatchScore(norm(p.name), phoneName) <= 2 || kwMatchScore(phoneName, norm(p.name)) <= 2);
     if(match.length){
       let html = `<b>📞 ${s.name}:</b><div style="margin-top:4px;font-size:13px">`;
       match.forEach(p=>{
